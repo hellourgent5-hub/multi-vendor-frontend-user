@@ -7,7 +7,6 @@ import ProductDetail from './pages/ProductDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Orders from './pages/Orders';
-import { io } from 'socket.io-client';
 
 // Fixed socket initialization
 export const socket = io(
