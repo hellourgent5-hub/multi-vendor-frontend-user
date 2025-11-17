@@ -9,7 +9,7 @@ import Register from './pages/Register';
 import Orders from './pages/Orders';
 import { io } from 'socket.io-client';
 
-export const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
+export const socket = io(import.meta.env.VITE_API_URL || https://multi-vendor-app-ey66.onrender.com/api
 
 export default function App(){
   const navigate = useNavigate();
