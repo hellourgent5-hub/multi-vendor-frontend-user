@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // 💡 Import Axios directly
+import axios from 'axios';
 
-// ⚠️ IMPORTANT: REPLACE THIS URL with your live Render Backend URL
-const BACKEND_URL = 'YOUR_BACKEND_API_URL'; 
+// ✅ CONFIRMED LIVE BACKEND URL
+const BACKEND_URL = 'https://multi-vendor-app-ey66.onrender.com'; 
 const REGISTER_ENDPOINT = `${BACKEND_URL}/api/vendors/register`;
 
 export default function Register() {
@@ -20,22 +20,14 @@ export default function Register() {
     setLoading(true);
     setError(null);
     
-    // Simple validation check
+    // Basic validation
     if (!name || !email || !password || !shopName) {
       setError('Please fill in all fields (Name, Shop Name, Email, Password).');
       setLoading(false);
       return;
     }
-    
-    // Check if the placeholder URL was used
-    if (BACKEND_URL.includes('YOUR_BACKEND_API_URL')) {
-        setError('Configuration Error: Please replace "YOUR_BACKEND_API_URL" with your actual Render backend address.');
-        setLoading(false);
-        return;
-    }
 
     try {
-      // 🟢 FIX: Use axios directly with the full URL
       const res = await axios.post(REGISTER_ENDPOINT, { 
         name, 
         email, 
@@ -49,14 +41,15 @@ export default function Register() {
       localStorage.setItem('token', token);
       localStorage.setItem('userId', id);
       
-      // Navigate to the home page on success
+      // Navigate to the home page or dashboard on success
       nav('/');
-      window.location.reload(); // Force reload to update Navbar state
+      window.location.reload(); 
 
     } catch (err) {
       console.error('Registration Error:', err.response?.data || err.message);
       // Display the error message from the backend (if available)
-      setError(err.response?.data?.message || 'Registration failed. Check server logs.');
+      const backendMessage = err.response?.data?.message || err.response?.data?.error;
+      setError(backendMessage || 'Registration failed due to a server error. Check Render logs.');
     } finally {
       setLoading(false);
     }
