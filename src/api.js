@@ -1,15 +1,11 @@
 import axios from "axios";
 
-// Create axios instance
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
 
-// Optional: request interceptor for auth token
 API.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -19,7 +15,6 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Optional: response interceptor
 API.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -28,10 +23,13 @@ API.interceptors.response.use(
   }
 );
 
-// ✅ Export API helper functions
 export const signupUser = (data) => API.post("/auth/signup", data);
 export const loginUser = (data) => API.post("/auth/login", data);
 export const logoutUser = () => API.post("/auth/logout");
 export const getCurrentUser = () => API.get("/auth/me");
+export const getProducts = () => API.get("/products");
+export const addToCartAPI = (productId) => API.post("/cart", { productId });
+export const getCart = () => API.get("/cart");
+export const removeFromCartAPI = (itemId) => API.delete(`/cart/${itemId}`);
 
 export default API;
