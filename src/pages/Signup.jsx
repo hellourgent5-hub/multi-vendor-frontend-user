@@ -1,109 +1,106 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-// Path confirmed: looks for api.js inside the src/api/ folder
-import { registerUser } from '../api/api'; 
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+// ✅ FIX 1: Import the correct function name: registerUser
+import { registerUser } from "../api/api"; 
 
 export default function Signup() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState(''); 
+  // State structure confirmed from your screenshot: single 'form' object
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
     setError(null);
     setLoading(true);
 
-    // 1. Prepare the data payload as a single object, matching what registerUser expects
-    const data = {
-        name,
-        email,
-        password
-    };
-
     try {
-      // 2. Call the API function with the data object
-      const response = await registerUser(data); 
+      // ✅ FIX 2: Call the correct function: registerUser (and pass the 'form' object)
+      const res = await registerUser(form); 
 
-      if (response.data && response.data.success) {
+      if (res.data && res.data.success) {
         alert("Registration successful! Please login.");
-        navigate('/login'); // Redirect to the login page
+        navigate("/login"); 
       } else {
-        // Handle server-side error messages
-        setError(response.data.message || "Registration failed. Please try again.");
+        // Handle backend error message
+        setError(res.data.message || "Sign Up failed. Please check your inputs.");
       }
-
     } catch (err) {
-      // Handle network or unhandled server errors
       console.error("Signup error:", err);
-      setError(err.response?.data?.message || "An unexpected error occurred during signup.");
+      // Display error from the response or a generic message
+      setError(err.response?.data?.message || "An unexpected error occurred during sign up.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container my-5 flex justify-center">
-      <form 
-        onSubmit={handleSubmit} 
-        className="p-6 bg-white rounded-xl shadow-lg" 
-        style={{ maxWidth: '400px' }}
+    <div className="container flex justify-center items-center min-h-screen">
+      <form
+        onSubmit={handleSubmit}
+        className="p-6 max-w-sm w-full bg-white rounded-xl shadow-lg"
       >
         <h1 className="text-center text-2xl font-bold mb-4">📝 Register / Sign Up</h1>
-        
+
         {/* Name Field */}
         <div className="mb-3">
           <label htmlFor="nameInput" className="form-label">Name</label>
-          <input 
-            type="text" 
-            className="form-control border p-2 w-full rounded" 
-            id="nameInput" 
-            value={name} 
-            onChange={(e) => setName(e.target.value)}
-            required 
+          <input
+            type="text"
+            className="border p-2 w-full rounded"
+            name="name" // Used for handleChange
+            value={form.name}
+            onChange={handleChange}
+            required
           />
         </div>
 
         {/* Email Field */}
         <div className="mb-3">
           <label htmlFor="emailInput" className="form-label">Email address</label>
-          <input 
-            type="email" 
-            className="form-control border p-2 w-full rounded" 
-            id="emailInput" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)}
-            required 
+          <input
+            type="email"
+            className="border p-2 w-full rounded"
+            name="email" // Used for handleChange
+            value={form.email}
+            onChange={handleChange}
+            required
           />
         </div>
-        
+
         {/* Password Field */}
         <div className="mb-4">
           <label htmlFor="passwordInput" className="form-label">Password</label>
-          <input 
-            type="password" 
-            className="form-control border p-2 w-full rounded" 
-            id="passwordInput" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)}
-            required 
+          <input
+            type="password"
+            className="border p-2 w-full rounded"
+            name="password" // Used for handleChange
+            value={form.password}
+            onChange={handleChange}
+            required
           />
         </div>
-        
+
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-        <button 
-          type="submit" 
-          className="btn btn-primary w-full bg-blue-600 text-white py-2 rounded mb-3 disabled:opacity-50"
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
           disabled={loading}
         >
           {loading ? 'Signing Up...' : 'Sign Up'}
         </button>
-        
-        <p className="text-center">
-          Already have an account? <Link to="/login" className="text-blue-600">Login Here</Link>
+
+        <p className="mt-4 text-center text-gray-600 text-sm">
+          Already have an account? 
+          <Link to="/login" className="text-blue-600 font-medium ml-1">
+            Login Here
+          </Link>
         </p>
       </form>
     </div>
