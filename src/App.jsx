@@ -1,27 +1,61 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import Products from './pages/Products';
-import Cart from './pages/Cart';
-import Profile from './pages/Profile';
+import React, { useState, useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
+import Home from "./pages/Home";
+import Profile from "./pages/Profile";
+import Cart from "./pages/Cart";
+import ProtectedRoute from "./pages/ProtectedRoute";
+import Header from "./components/Header";
+import API from "./api";
 
-export default function App(){
+function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await API.get("/auth/me");
+        setUser(res?.data || null);
+      } catch (err) {
+        console.warn("User fetch failed", err);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+
   return (
-    <div>
-      <Navbar />
-      <div style={{ padding: 20 }}>
-        <Routes>
-          <Route path='/' element={<Home/>}/>
-          <Route path='/products' element={<Products/>}/>
-          <Route path='/cart' element={<Cart/>}/>
-          <Route path='/profile' element={<Profile/>}/>
-          <Route path='/signup' element={<Signup/>}/>
-         <Route path='/Login' element={<Login/>}/>
-        </Routes>
-      </div>
-    </div>
+    <>
+      <Header user={user} setUser={setUser} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute>
+              <Cart />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </>
   );
+}
 
+export default App;
