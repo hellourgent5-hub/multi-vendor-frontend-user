@@ -1,31 +1,74 @@
-import { useState } from "react";
-import { signupUser } from "../api";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { signupUser } from "../api";
 
-export default function Signup() {
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+function Signup() {
   const navigate = useNavigate();
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+
     try {
-      await signupUser(form);
-      alert("Signup successful!");
-      navigate("/login");
+      const res = await signupUser(form); // API call
+      if (res.data) {
+        alert("Signup successful! Please login.");
+        navigate("/login");
+      }
     } catch (err) {
-      alert(err.response?.data?.message || "Signup failed");
+      console.error("Signup error:", err.response?.data || err.message);
+      setError(err.response?.data?.message || "Signup failed");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Signup</h2>
-      <input name="name" placeholder="Name" onChange={handleChange} required />
-      <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
-      <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
-      <button type="submit">Signup</button>
-    </form>
+    <div style={{ maxWidth: "400px", margin: "50px auto" }}>
+      <h2>Sign Up</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          name="name"
+          placeholder="Name"
+          value={form.name}
+          onChange={handleChange}
+          required
+          style={{ display: "block", marginBottom: "10px", width: "100%" }}
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          required
+          style={{ display: "block", marginBottom: "10px", width: "100%" }}
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          required
+          style={{ display: "block", marginBottom: "10px", width: "100%" }}
+        />
+        <button type="submit" disabled={loading}>
+          {loading ? "Signing up..." : "Sign Up"}
+        </button>
+        {error && <p style={{ color: "red" }}>{error}</p>}
+      </form>
+    </div>
   );
 }
+
+export default Signup;
