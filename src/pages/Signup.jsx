@@ -1,74 +1,33 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { signupUser } from "../api";
+// src/pages/Signup.jsx
 
-function Signup() {
-  const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+import React from 'react';
+import { Link } from 'react-router-dom';
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      const res = await signupUser(form); // API call
-      if (res.data) {
-        alert("Signup successful! Please login.");
-        navigate("/login");
-      }
-    } catch (err) {
-      console.error("Signup error:", err.response?.data || err.message);
-      setError(err.response?.data?.message || "Signup failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export default function Signup() {
   return (
-    <div style={{ maxWidth: "400px", margin: "50px auto" }}>
-      <h2>Sign Up</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="name"
-          placeholder="Name"
-          value={form.name}
-          onChange={handleChange}
-          required
-          style={{ display: "block", marginBottom: "10px", width: "100%" }}
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          required
-          style={{ display: "block", marginBottom: "10px", width: "100%" }}
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          required
-          style={{ display: "block", marginBottom: "10px", width: "100%" }}
-        />
-        <button type="submit" disabled={loading}>
-          {loading ? "Signing up..." : "Sign Up"}
-        </button>
-        {error && <p style={{ color: "red" }}>{error}</p>}
+    <div className="container my-5">
+      <h1 className="text-center">📝 Register / Sign Up</h1>
+      <form className="mx-auto" style={{ maxWidth: '400px' }}>
+        <p className="text-center">Create a new account</p>
+        
+        {/* Email Field */}
+        <div className="mb-3">
+          <label htmlFor="emailInput" className="form-label">Email address</label>
+          <input type="email" className="form-control" id="emailInput" required />
+        </div>
+        
+        {/* Password Field */}
+        <div className="mb-3">
+          <label htmlFor="passwordInput" className="form-label">Password</label>
+          <input type="password" className="form-control" id="passwordInput" required />
+        </div>
+        
+        <button type="submit" className="btn btn-primary w-100 mb-3">Sign Up</button>
+        
+        <p className="text-center">
+          Already have an account? <Link to="/login">Login Here</Link>
+        </p>
       </form>
     </div>
   );
 }
-
-export default Signup;
