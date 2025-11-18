@@ -10,17 +10,31 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// Auth
-export const registerUser = (data) => API.post("/auth/register", data);
-export const loginUser = (data) => API.post("/auth/login", data);
+// AUTH FIXED
+export const registerUser = async (data) => {
+  try {
+    const res = await API.post("/auth/register", data);
+    return res.data;   // returns { message: "..."} or error
+  } catch (err) {
+    return { error: err.response?.data?.message || "Registration failed" };
+  }
+};
 
-// Products
+export const loginUser = async (data) => {
+  try {
+    const res = await API.post("/auth/login", data);
+    return res.data;  // returns { user: {...}, token: "..." }
+  } catch (err) {
+    return { error: err.response?.data?.message || "Login failed" };
+  }
+};
+
+// PRODUCTS
 export const getProducts = () => API.get("/products");
 export const getProduct = (id) => API.get(`/products/${id}`);
 
-// Orders
+// ORDERS
 export const createOrder = (data) => API.post("/orders", data);
 export const getOrders = () => API.get("/orders");
-export const getAllOrdersForUser = () => API.get("/orders"); // same as getOrders for this backend shape
 
 export default API;
