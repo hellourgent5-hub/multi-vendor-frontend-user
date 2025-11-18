@@ -1,59 +1,64 @@
 import React, { useEffect, useState } from "react";
-import { getProduct } from "../api/api.js";
 import { useParams } from "react-router-dom";
+import { getProduct } from "../api/api.js";
 
 export default function ProductDetails() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    getProduct(id)
-      .then((res) => setProduct(res.data || null))
-      .catch(() => setProduct(null));
+    const loadProduct = async () => {
+      try {
+        const res = await getProduct(id);
+        setProduct(res.data.product);
+      } catch (err) {
+        setError("Failed to load product");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProduct();
   }, [id]);
 
-  if (!product) return <div className="p-4">Loading...</div>;
-
   const addToCart = () => {
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-    const found = cart.find((i) => i._id === product._id);
-    if (found) {
-      found.quantity = (found.quantity || 1) + 1;
-    } else {
-      cart.push({ ...product, quantity: 1 });
-    }
+    cart.push({
+      id: product._id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+    });
 
     localStorage.setItem("cart", JSON.stringify(cart));
-    alert("Added to cart");
+    alert("Added to cart!");
   };
 
-  // SAFE IMAGE HANDLING — never errors
-  const img =
-    product?.images?.[0] ||
-    product?.image ||
-    "https://via.placeholder.com/800x600";
+  if (loading) return <p className="p-4 text-xl">Loading...</p>;
+  if (error) return <p className="p-4 text-red-500">{error}</p>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <img
-            src={img}
-            alt={product?.name || "Product"}
-            className="w-full h-96 object-cover rounded"
-          />
-        </div>
+    <div className="p-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
+        {/* Product Image */}
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full rounded-lg shadow-lg"
+        />
+
+        {/* Product Info */}
         <div>
-          <h1 className="text-2xl font-bold">{product.name}</h1>
-          <p className="text-xl text-green-600 mt-2">₹{product.price}</p>
-          <p className="mt-4 text-gray-700">{product.description}</p>
+          <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+          <p className="text-gray-700 text-lg mb-4">{product.description}</p>
+          <p className="text-2xl font-semibold mb-6">₹{product.price}</p>
 
           <button
             onClick={addToCart}
-            className="mt-6 bg-blue-600 text-white px-4 py-2 rounded"
-          >
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
             Add to Cart
           </button>
         </div>
