@@ -13,15 +13,28 @@ export default function LoginRegister() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       if (isLogin) {
         const res = await loginUser({ email, password });
-        setUser(res.data.user);
-        setToken(res.data.token);
+
+        if (res.error) {
+          alert(res.error);
+          return;
+        }
+
+        setUser(res.user);
+        setToken(res.token);
         navigate("/");
       } else {
-        await registerUser({ name, email, password });
-        alert("Registered. Now login.");
+        const res = await registerUser({ name, email, password });
+
+        if (res.error) {
+          alert(res.error);
+          return;
+        }
+
+        alert("Registered successfully. Now login.");
         setIsLogin(true);
       }
     } catch (err) {
@@ -32,14 +45,40 @@ export default function LoginRegister() {
   return (
     <div className="max-w-md mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">{isLogin ? "Login" : "Register"}</h1>
+
       <form onSubmit={handleSubmit} className="space-y-3 bg-white p-4 rounded shadow">
         {!isLogin && (
-          <input required value={name} onChange={e => setName(e.target.value)} className="border p-2 w-full" placeholder="Full name" />
+          <input
+            required
+            value={name}
+            onChange={e => setName(e.target.value)}
+            className="border p-2 w-full"
+            placeholder="Full name"
+          />
         )}
-        <input required value={email} onChange={e => setEmail(e.target.value)} className="border p-2 w-full" placeholder="Email" />
-        <input required value={password} onChange={e => setPassword(e.target.value)} className="border p-2 w-full" placeholder="Password" type="password" />
-        <button className="w-full bg-blue-600 text-white p-2 rounded">{isLogin ? "Login" : "Register"}</button>
+
+        <input
+          required
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          className="border p-2 w-full"
+          placeholder="Email"
+        />
+
+        <input
+          required
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          className="border p-2 w-full"
+          placeholder="Password"
+          type="password"
+        />
+
+        <button className="w-full bg-blue-600 text-white p-2 rounded">
+          {isLogin ? "Login" : "Register"}
+        </button>
       </form>
+
       <div className="text-center mt-3">
         <button className="text-blue-600" onClick={() => setIsLogin(!isLogin)}>
           {isLogin ? "Create an account" : "Have an account? Login"}
