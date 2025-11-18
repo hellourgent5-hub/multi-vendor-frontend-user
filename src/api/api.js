@@ -1,21 +1,19 @@
-import axios from 'axios';
+import axios from "axios";
 
 const API = axios.create({
-    baseURL: "https://multi-vendor-app-ey66.onrender.com/api",
+  baseURL: import.meta.env.VITE_API_URL
 });
 
-API.interceptors.request.use((req) => {
-    const token = localStorage.getItem('token');
-    if(token){
-        req.headers.Authorization = `Bearer ${token}`;
-    }
-    return req;
-});
+// AUTH
+export const loginUser = (data) => API.post("/auth/login", data);
+export const registerUser = (data) => API.post("/auth/register", data);
 
-// Admin API endpoints
-export const loginAdmin = (data) => API.post('/auth/login', data);
-export const getVendors = () => API.get('/vendors');
-export const getProducts = () => API.get('/products');
-export const getOrders = () => API.get('/orders');
-export const approveVendor = (id) => API.patch(`/vendors/approve/${id}`);
-export const deleteProduct = (id) => API.delete(`/products/${id}`);
+// PRODUCTS
+export const getProducts = () => API.get("/products");
+export const getProductById = (id) => API.get(`/products/${id}`);
+
+// CART / ORDER
+export const createOrder = (data) => API.post("/orders", data);
+export const getUserOrders = (id) => API.get(`/orders/user/${id}`);
+
+export default API;
