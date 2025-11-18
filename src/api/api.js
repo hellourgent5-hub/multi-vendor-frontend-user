@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://multi-vendor-app-ey66.onrender.com/api"
+  baseURL: "https://multi-vendor-app-ey66.onrender.com/api",
 });
 
 API.interceptors.request.use((config) => {
@@ -10,25 +10,9 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// REGISTER
-export const registerUser = async (data) => {
-  try {
-    const res = await API.post("/auth/register", data);
-    return res.data; // { message: "User registered" }
-  } catch (err) {
-    return { error: err.response?.data?.message || "Registration failed" };
-  }
-};
-
-// LOGIN
-export const loginUser = async (data) => {
-  try {
-    const res = await API.post("/auth/login", data);
-    return res.data; // { user: {...}, token:"..." }
-  } catch (err) {
-    return { error: err.response?.data?.message || "Login failed" };
-  }
-};
+// AUTH
+export const registerUser = (data) => API.post("/auth/register", data);
+export const loginUser = (data) => API.post("/auth/login", data);
 
 // PRODUCTS
 export const getProducts = () => API.get("/products");
