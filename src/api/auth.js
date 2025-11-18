@@ -21,6 +21,7 @@ export const registerUser = async ({ name, email, password }) => {
     return { error: err?.response?.data?.message || "Registration failed" };
   }
 };
+
 export const loginUser = async ({ email, password }) => {
   try {
     const res = await axios({
