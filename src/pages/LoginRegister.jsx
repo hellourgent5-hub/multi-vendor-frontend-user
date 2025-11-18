@@ -18,23 +18,21 @@ export default function LoginRegister() {
       if (isLogin) {
         const res = await loginUser({ email, password });
 
-        if (res.error) {
-          alert(res.error);
-          return;
-        }
+        setUser(res.data.user);
+        setToken(res.data.token);
 
-        setUser(res.user);
-        setToken(res.token);
+        localStorage.setItem("token", res.data.token);
+
         navigate("/");
       } else {
-        const res = await registerUser({ name, email, password });
+        const res = await registerUser({
+          name,
+          email,
+          password,
+          role: "customer"   // ⭐ REQUIRED FOR BACKEND
+        });
 
-        if (res.error) {
-          alert(res.error);
-          return;
-        }
-
-        alert("Registered successfully. Now login.");
+        alert("Registered successfully! Now login.");
         setIsLogin(true);
       }
     } catch (err) {
@@ -51,7 +49,7 @@ export default function LoginRegister() {
           <input
             required
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             className="border p-2 w-full"
             placeholder="Full name"
           />
@@ -60,7 +58,7 @@ export default function LoginRegister() {
         <input
           required
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
           className="border p-2 w-full"
           placeholder="Email"
         />
@@ -68,10 +66,10 @@ export default function LoginRegister() {
         <input
           required
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
           className="border p-2 w-full"
-          placeholder="Password"
           type="password"
+          placeholder="Password"
         />
 
         <button className="w-full bg-blue-600 text-white p-2 rounded">
