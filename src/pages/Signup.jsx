@@ -11,8 +11,8 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await signupUser(form);
-      alert(res.data.message || "Signup successful!");
+      await signupUser(form);
+      alert("Signup successful!");
       navigate("/login");
     } catch (err) {
       alert(err.response?.data?.message || "Signup failed");
