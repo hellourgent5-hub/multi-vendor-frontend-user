@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 // Remove registerUser and useNavigate if they are not used for pure login logic
-import { loginUser } from "../../api/api"; // Assuming loginUser is defined here
+import { loginUser } from "../api/api"; // Assuming loginUser is defined here
 import { Link, useNavigate } from "react-router-dom"; // Add Link for navigation
 
 export default function Login() {
