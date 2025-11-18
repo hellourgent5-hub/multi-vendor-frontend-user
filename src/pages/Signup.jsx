@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-// ✅ FIX 1: Import the correct function name: registerUser
+// ✅ FIXED 1: Corrected API path to go up one directory: ../api/api
 import { registerUser } from "../api/api"; 
 
 export default function Signup() {
   const navigate = useNavigate();
-  // State structure confirmed from your screenshot: single 'form' object
+  // State structure matching your code: single 'form' object
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -20,19 +20,17 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      // ✅ FIX 2: Call the correct function: registerUser (and pass the 'form' object)
+      // ✅ FIXED 2: Calling the correct function: registerUser (and passing the 'form' object)
       const res = await registerUser(form); 
 
       if (res.data && res.data.success) {
         alert("Registration successful! Please login.");
         navigate("/login"); 
       } else {
-        // Handle backend error message
         setError(res.data.message || "Sign Up failed. Please check your inputs.");
       }
     } catch (err) {
       console.error("Signup error:", err);
-      // Display error from the response or a generic message
       setError(err.response?.data?.message || "An unexpected error occurred during sign up.");
     } finally {
       setLoading(false);
@@ -53,7 +51,7 @@ export default function Signup() {
           <input
             type="text"
             className="border p-2 w-full rounded"
-            name="name" // Used for handleChange
+            name="name" 
             value={form.name}
             onChange={handleChange}
             required
@@ -66,7 +64,7 @@ export default function Signup() {
           <input
             type="email"
             className="border p-2 w-full rounded"
-            name="email" // Used for handleChange
+            name="email" 
             value={form.email}
             onChange={handleChange}
             required
@@ -79,7 +77,7 @@ export default function Signup() {
           <input
             type="password"
             className="border p-2 w-full rounded"
-            name="password" // Used for handleChange
+            name="password" 
             value={form.password}
             onChange={handleChange}
             required
