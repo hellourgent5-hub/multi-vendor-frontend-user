@@ -19,24 +19,32 @@ export default function Navbar() {
   return (
     <nav className="bg-white shadow sticky top-0 z-20">
       <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-        <Link to="/" className="text-xl font-bold">MultiVendor</Link>
+        <Link to="/" className="text-xl font-bold">
+          MultiVendor
+        </Link>
+
         <div className="flex items-center space-x-4">
-          <Link to="/cart" className="relative">
-            Cart
-            <span className="ml-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">{cartCount}</span>
+          {/* Cart */}
+          <Link to="/cart" className="relative flex items-center">
+            <span>🛒 Cart</span>
+            <span className="ml-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+              {cartCount}
+            </span>
           </Link>
+
+          {/* Login / User */}
           {user ? (
             <>
               <span className="text-sm">Hi, {user.name}</span>
-              <button onClick={logout} className="text-sm text-red-600">Logout</button>
+              <button onClick={logout} className="text-sm text-red-600">
+                Logout
+              </button>
             </>
           ) : (
-            <Link to="/login" className="text-sm text-blue-600">Login / Register</Link>
-            <Link to="/cart" className="text-lg font-semibold">
-             🛒 Cart
-              </Link>
-
-    )}
+            <Link to="/login" className="text-sm text-blue-600">
+              Login / Register
+            </Link>
+          )}
         </div>
       </div>
     </nav>
