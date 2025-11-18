@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-// IMPORTANT: This path (../api/api) is confirmed based on your file structure (src/pages/Signup.jsx -> src/api/api.js)
+// Path confirmed: looks for api.js inside the src/api/ folder
 import { registerUser } from '../api/api'; 
 
 export default function Signup() {
@@ -16,23 +16,28 @@ export default function Signup() {
     setError(null);
     setLoading(true);
 
-    try {
-      // Calling the registerUser API function
-      const response = await registerUser(name, email, password); 
+    // 1. Prepare the data payload as a single object, matching what registerUser expects
+    const data = {
+        name,
+        email,
+        password
+    };
 
-      // Check for success (adjust this condition based on your actual API response structure)
+    try {
+      // 2. Call the API function with the data object
+      const response = await registerUser(data); 
+
       if (response.data && response.data.success) {
         alert("Registration successful! Please login.");
-        navigate('/login'); // Redirect to the login page after successful registration
+        navigate('/login'); // Redirect to the login page
       } else {
         // Handle server-side error messages
-        setError(response.data.message || "Registration failed. Check your data.");
+        setError(response.data.message || "Registration failed. Please try again.");
       }
 
     } catch (err) {
       // Handle network or unhandled server errors
       console.error("Signup error:", err);
-      // Use the server's error message or a generic one
       setError(err.response?.data?.message || "An unexpected error occurred during signup.");
     } finally {
       setLoading(false);
@@ -41,7 +46,6 @@ export default function Signup() {
 
   return (
     <div className="container my-5 flex justify-center">
-      {/* 🔑 FIX APPLIED: The opening <form> tag is now syntactically correct */}
       <form 
         onSubmit={handleSubmit} 
         className="p-6 bg-white rounded-xl shadow-lg" 
@@ -93,7 +97,7 @@ export default function Signup() {
         <button 
           type="submit" 
           className="btn btn-primary w-full bg-blue-600 text-white py-2 rounded mb-3 disabled:opacity-50"
-          disabled={loading} // Disable while loading
+          disabled={loading}
         >
           {loading ? 'Signing Up...' : 'Sign Up'}
         </button>
@@ -101,7 +105,7 @@ export default function Signup() {
         <p className="text-center">
           Already have an account? <Link to="/login" className="text-blue-600">Login Here</Link>
         </p>
-      </form> {/* 🔑 FIX APPLIED: Closing form tag ensures the file structure is valid */}
+      </form>
     </div>
   );
 }
