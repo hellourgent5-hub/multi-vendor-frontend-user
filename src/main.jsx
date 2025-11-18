@@ -15,13 +15,21 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    API.get("/auth/me")
-      .then(res => setUser(res.data))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    const fetchUser = async () => {
+      try {
+        const res = await API.get("/auth/me");
+        setUser(res.data || null);
+      } catch (err) {
+        console.warn("User not logged in or API failed", err.message);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
   }, []);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div>Loading...</div>; // always show something while checking user
 
   return (
     <>
