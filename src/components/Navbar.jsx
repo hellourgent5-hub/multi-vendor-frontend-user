@@ -32,7 +32,11 @@ export default function Navbar() {
             </>
           ) : (
             <Link to="/login" className="text-sm text-blue-600">Login / Register</Link>
-          )}
+            <Link to="/cart" className="text-lg font-semibold">
+             🛒 Cart
+              </Link>
+
+    )}
         </div>
       </div>
     </nav>
