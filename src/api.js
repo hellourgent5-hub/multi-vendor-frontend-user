@@ -1,38 +1,37 @@
-// Import axios
 import axios from "axios";
 
-// Create an axios instance with base URL
+// Create axios instance
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, // URL from .env file
-  withCredentials: true,                  // allows cookies if backend uses them
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Optional: Add request interceptor (e.g., for auth token)
+// Optional: request interceptor for auth token
 API.interceptors.request.use(
   (config) => {
-    // If you store token in localStorage
     const token = localStorage.getItem("token");
-    if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
-    }
+    if (token) config.headers["Authorization"] = `Bearer ${token}`;
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Optional: Add response interceptor for errors
+// Optional: response interceptor
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    // You can handle global errors here
     console.error("API Error:", error.response?.data || error.message);
     return Promise.reject(error);
   }
 );
+
+// ✅ Export API helper functions
+export const signupUser = (data) => API.post("/auth/signup", data);
+export const loginUser = (data) => API.post("/auth/login", data);
+export const logoutUser = () => API.post("/auth/logout");
+export const getCurrentUser = () => API.get("/auth/me");
 
 export default API;
