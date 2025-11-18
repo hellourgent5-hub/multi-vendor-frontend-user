@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 // Import Link for navigation
 import { Link, useNavigate } from "react-router-dom"; 
-import { loginUser } from "../../api/api"; // Ensure this path is correct: ../../api/api or ../api/api
+// Check your API path here: if api is inside src, use '../api/api'. If not, use '../../api/api'
+import { loginUser } from "../api/api"; 
 
 export default function Login() {
   const navigate = useNavigate();
+  // State variables for login
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null); 
@@ -14,10 +16,9 @@ export default function Login() {
     setError(null); 
     
     try {
-        const res = await loginUser({ email, password }); // Pass data as object
+        const res = await loginUser({ email, password }); 
         
         if (res.data && res.data.token) {
-            // Handle successful login (e.g., store token)
             alert("Login successful!");
             navigate('/');
         } else {
@@ -68,7 +69,7 @@ export default function Login() {
           </button>
         </form>
 
-        {/* This is the missing link */}
+        {/* ✅ FIXED: The missing link to the Signup page */}
         <div className="mt-4 text-center">
           <p className="text-gray-600 text-sm">
             Don't have an account? 
