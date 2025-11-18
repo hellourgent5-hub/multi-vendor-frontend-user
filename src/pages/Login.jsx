@@ -1,31 +1,40 @@
 import { useState } from "react";
-import { loginUser } from "../api";
-import { useNavigate } from "react-router-dom";
+import { loginUser, registerUser } from "../api/api";
 
 export default function Login() {
-  const [form, setForm] = useState({ email: "", password: "" });
-  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleLogin = async () => {
+    await loginUser({ email, password });
+    localStorage.setItem("user", email);
+    window.location = "/";
+  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await loginUser(form);
-      if(res.data.token) localStorage.setItem("token", res.data.token);
-      alert("Login successful!");
-      navigate("/");
-    } catch (err) {
-      alert(err.response?.data?.message || "Login failed");
-    }
+  const handleRegister = async () => {
+    await registerUser({ email, password });
+    alert("Registered! Now login.");
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Login</h2>
-      <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
-      <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
-      <button type="submit">Login</button>
-    </form>
+    <div className="p-6 max-w-md mx-auto">
+      <h1 className="text-2xl mb-4 font-bold">Login / Register</h1>
+
+      <input className="border p-2 w-full" placeholder="Email"
+        onChange={(e) => setEmail(e.target.value)} />
+
+      <input className="border p-2 w-full mt-2" placeholder="Password" type="password"
+        onChange={(e) => setPassword(e.target.value)} />
+
+      <button onClick={handleLogin}
+        className="mt-4 w-full bg-blue-600 text-white p-2 rounded">
+        Login
+      </button>
+
+      <button onClick={handleRegister}
+        className="mt-2 w-full bg-green-600 text-white p-2 rounded">
+        Register
+      </button>
+    </div>
   );
 }
