@@ -8,3 +8,12 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 )
+import CartProvider from "./context/CartContext.jsx";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <AuthProvider>
+    <CartProvider>
+      <App />
+    </CartProvider>
+  </AuthProvider>
+);
