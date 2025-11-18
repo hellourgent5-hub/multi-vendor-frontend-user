@@ -13,8 +13,8 @@ export default function Login() {
     try {
       const res = await loginUser(form);
       if(res.data.token) localStorage.setItem("token", res.data.token);
-      alert(res.data.message || "Login successful!");
-      navigate("/"); // go to home
+      alert("Login successful!");
+      navigate("/");
     } catch (err) {
       alert(err.response?.data?.message || "Login failed");
     }
