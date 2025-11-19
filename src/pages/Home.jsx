@@ -5,29 +5,17 @@ import { getProducts } from "../api/api.js";
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [filtered, setFiltered] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [catModules, setCatModules] = useState([]);
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState("All");
-  const [suggestions, setSuggestions] = useState([]);
-  const [recent, setRecent] = useState([]);
-  const [bannerIndex, setBannerIndex] = useState(0);
-  const [trending, setTrending] = useState([]);
-  const [deals, setDeals] = useState([]);
-
-  const banners = [
-    "/images/banner1.jpg",
-    "/images/banner2.jpg",
-    "/images/banner3.jpg",
-  ];
 
   const defaultCategoryImages = {
-    Mobiles: "/images/mobile.jpg",
-    Electronics: "/images/electronics.jpg",
-    Fashion: "/images/fashion.jpg",
-    Beauty: "/images/beauty.jpg",
-    Grocery: "/images/grocery.jpg",
-    Home: "/images/home.jpg",
+    Mobiles: "https://via.placeholder.com/100?text=Mobiles",
+    Electronics: "https://via.placeholder.com/100?text=Electronics",
+    Fashion: "https://via.placeholder.com/100?text=Fashion",
+    Beauty: "https://via.placeholder.com/100?text=Beauty",
+    Grocery: "https://via.placeholder.com/100?text=Grocery",
+    Home: "https://via.placeholder.com/100?text=Home",
   };
 
   const defaultSubcategories = {
@@ -46,202 +34,111 @@ export default function Home() {
         const data = res.data || [];
         setProducts(data);
         setFiltered(data);
-
-        setTrending([...data].sort((a, b) => (b.sold || 0) - (a.sold || 0)).slice(0, 6));
-        setDeals(data.filter((p) => p.originalPrice && p.price < p.originalPrice).slice(0, 6));
       })
       .catch(() => {});
   }, []);
 
-  // ------------------ Fetch Categories ------------------
+  // ------------------ Load Categories with Defaults ------------------
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/categories`)
-      .then((res) => res.json())
-      .then((data) => setCatModules(data))
-      .catch(() => {});
-  }, []);
-
-  // ------------------ Auto Banner Slider ------------------
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setBannerIndex((prev) => (prev + 1) % banners.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // ------------------ Recent Products ------------------
-  useEffect(() => {
-    const items = JSON.parse(localStorage.getItem("recent")) || [];
-    setRecent(items);
+    // Always use defaults
+    const categories = Object.keys(defaultCategoryImages).map((name) => ({
+      _id: name,
+      name,
+      image: defaultCategoryImages[name],
+      subcategories: defaultSubcategories[name],
+    }));
+    setCatModules(categories);
   }, []);
 
   // ------------------ Filter Products ------------------
   useEffect(() => {
     let list = products;
-    if (activeCat !== "All") list = list.filter((p) => p.category === activeCat);
-    if (search.trim() !== "")
-      list = list.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+    if (activeCat !== "All") {
+      list = list.filter(
+        (p) =>
+          p.category === activeCat || 
+          (defaultSubcategories[activeCat] || []).includes(p.subcategory)
+      );
+    }
+    if (search.trim() !== "") {
+      list = list.filter((p) =>
+        p.name.toLowerCase().includes(search.toLowerCase())
+      );
+    }
     setFiltered(list);
   }, [search, activeCat, products]);
-
-  // ------------------ Search Suggestions ------------------
-  const handleSearch = (e) => {
-    const value = e.target.value;
-    setSearch(value);
-
-    if (!value.trim()) {
-      setSuggestions([]);
-      return;
-    }
-
-    const matches = products.filter((p) =>
-      p.name.toLowerCase().includes(value.toLowerCase())
-    ).slice(0, 5);
-
-    setSuggestions(matches);
-  };
-
-  const addToCart = (product) => {
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    const exists = cart.find((p) => p._id === product._id);
-    if (!exists) cart.push({ ...product, quantity: 1 });
-    localStorage.setItem("cart", JSON.stringify(cart));
-    alert(`${product.name} added to cart`);
-  };
-
-  const CarouselCard = ({ product }) => {
-    const img = (product.images && product.images[0]) || product.image || "/images/placeholder.png";
-    return (
-      <div className="flex-shrink-0 w-40 sm:w-44 md:w-48 bg-white rounded shadow p-3 hover:shadow-lg transition snap-start">
-        <Link to={`/product/${product._id}`}>
-          <img
-            src={img}
-            className="w-full h-32 sm:h-36 md:h-40 object-cover rounded"
-            alt={product.name}
-          />
-        </Link>
-        <h3 className="mt-2 text-sm font-semibold truncate">{product.name}</h3>
-        <p className="text-green-600 font-bold text-sm">₹{product.price}</p>
-        <button
-          onClick={() => addToCart(product)}
-          className="mt-1 w-full bg-blue-600 text-white py-1 rounded text-xs"
-        >
-          Add to Cart
-        </button>
-      </div>
-    );
-  };
-
-  const CarouselSection = ({ title, items }) => {
-    if (!items || items.length === 0) return null;
-
-    return (
-      <div className="mb-6">
-        <h2 className="text-xl font-bold mb-3">{title}</h2>
-        <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scroll-smooth">
-          {items.map((item) => (
-            <CarouselCard key={item._id} product={item} />
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const featured = products.slice(0, 5);
 
   return (
     <div className="max-w-7xl mx-auto p-4">
 
-      {/* ---------------- Banner ---------------- */}
-      <div className="w-full h-52 sm:h-64 md:h-72 rounded-xl overflow-hidden mb-6">
-        <img src={banners[bannerIndex]} alt="banner" className="w-full h-full object-cover" />
-      </div>
-
-      {/* ---------------- Carousels ---------------- */}
-      <CarouselSection title="🔥 Featured Products" items={featured} />
-      <CarouselSection title="🔥 Trending Now" items={trending} />
-      <CarouselSection title="💥 Top Deals" items={deals} />
-      {recent.length > 0 && <CarouselSection title="🕒 Recently Viewed" items={recent} />}
-
-      {/* ---------------- Search ---------------- */}
-      <div className="relative mt-6 mb-4">
+      {/* ------------------ Search ------------------ */}
+      <div className="mb-4">
         <input
-          className="w-full p-3 border rounded shadow-sm"
+          type="text"
           placeholder="Search for products..."
+          className="w-full p-3 border rounded shadow-sm"
           value={search}
-          onChange={handleSearch}
+          onChange={(e) => setSearch(e.target.value)}
         />
-        {suggestions.length > 0 && (
-          <ul className="absolute z-50 w-full bg-white border mt-1 rounded shadow max-h-60 overflow-y-auto">
-            {suggestions.map((p) => (
-              <li
-                key={p._id}
-                className="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                onClick={() => (window.location.href = `/product/${p._id}`)}
-              >
-                <img
-                  src={(p.images && p.images[0]) || "/images/placeholder.png"}
-                  className="w-8 h-8 object-cover rounded mr-2"
-                />
-                <span className="truncate">{p.name}</span>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
 
-      {/* ---------------- Categories + Subcategories ---------------- */}
+      {/* ------------------ Categories ------------------ */}
       <h2 className="text-xl font-bold mb-3">Categories</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
-        {catModules.map((cat) => {
-          const img = cat.image || defaultCategoryImages[cat.name] || "/images/placeholder.png";
-          const subs = cat.subcategories || defaultSubcategories[cat.name] || [];
+        {catModules.map((cat) => (
+          <div
+            key={cat._id}
+            className="p-3 rounded-xl border flex flex-col items-center hover:shadow transition"
+          >
+            <img
+              src={cat.image}
+              className="w-16 h-16 object-cover rounded-full"
+              alt={cat.name}
+            />
+            <span className="text-sm mt-1 font-semibold">{cat.name}</span>
 
-          return (
-            <div key={cat._id} className="p-3 rounded-xl border flex flex-col items-center hover:shadow">
-              <img src={img} className="w-12 h-12 object-cover rounded-full" />
-              <span className="text-sm mt-1 font-semibold">{cat.name}</span>
-
-              {subs.length > 0 && (
-                <div className="mt-1 text-xs text-gray-500 flex flex-wrap justify-center gap-1">
-                  {subs.map((sub) => (
-                    <button
-                      key={sub}
-                      onClick={() => setActiveCat(sub)}
-                      className="px-1 py-0.5 bg-gray-200 rounded hover:bg-blue-100 text-gray-700"
-                    >
-                      {sub}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            {cat.subcategories && cat.subcategories.length > 0 && (
+              <div className="mt-1 text-xs text-gray-500 flex flex-wrap justify-center gap-1">
+                {cat.subcategories.map((sub) => (
+                  <button
+                    key={sub}
+                    onClick={() => setActiveCat(sub)}
+                    className={`px-1 py-0.5 rounded bg-gray-200 hover:bg-blue-100 text-gray-700`}
+                  >
+                    {sub}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
-      {/* ---------------- Product Grid ---------------- */}
-      <h2 className="text-xl font-bold mb-3">All Products</h2>
+      {/* ------------------ Product Grid ------------------ */}
+      <h2 className="text-xl font-bold mb-3">Products</h2>
       {filtered.length === 0 ? (
         <div className="text-gray-500">No products found</div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((product) => {
-            const img = (product.images && product.images[0]) || product.image || "/images/placeholder.png";
+            const img =
+              (product.images && product.images[0]) ||
+              product.image ||
+              "https://via.placeholder.com/300";
             return (
-              <div key={product._id} className="border rounded p-3 hover:shadow transition">
-                <Link to={`/product/${product._id}`}>
-                  <img src={img} alt={product.name} className="w-full h-36 sm:h-40 md:h-44 object-cover rounded" />
-                </Link>
+              <Link
+                to={`/product/${product._id}`}
+                key={product._id}
+                className="border rounded p-3 hover:shadow transition"
+              >
+                <img
+                  src={img}
+                  alt={product.name}
+                  className="w-full h-36 sm:h-40 md:h-44 object-cover rounded"
+                />
                 <h3 className="mt-2 font-semibold truncate">{product.name}</h3>
                 <p className="text-green-600 font-bold">₹{product.price}</p>
-                <button
-                  onClick={() => addToCart(product)}
-                  className="mt-1 w-full bg-blue-600 text-white py-1 rounded text-xs"
-                >
-                  Add to Cart
-                </button>
-              </div>
+              </Link>
             );
           })}
         </div>
