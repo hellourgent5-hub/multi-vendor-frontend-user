@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getProducts } from "../api/api.js";
 
@@ -6,13 +6,14 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [catModules, setCatModules] = useState([]);
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState("All");
+  const [suggestions, setSuggestions] = useState([]);
   const [recent, setRecent] = useState([]);
   const [bannerIndex, setBannerIndex] = useState(0);
   const [trending, setTrending] = useState([]);
   const [deals, setDeals] = useState([]);
-  const [catModules, setCatModules] = useState([]);
 
   const banners = [
     "/images/banner1.jpg",
@@ -20,9 +21,6 @@ export default function Home() {
     "/images/banner3.jpg",
   ];
 
-  const featuredRef = useRef(null);
-
-  // Default images and subcategories in case backend doesn't provide
   const defaultCategoryImages = {
     Mobiles: "/images/mobile.jpg",
     Electronics: "/images/electronics.jpg",
@@ -63,23 +61,6 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
-  // ------------------ Apply Filters ------------------
-  useEffect(() => {
-    let list = products;
-    if (activeCat !== "All") list = list.filter((p) => p.category === activeCat);
-    if (search.trim() !== "")
-      list = list.filter((p) =>
-        p.name.toLowerCase().includes(search.toLowerCase())
-      );
-    setFiltered(list);
-  }, [search, activeCat, products]);
-
-  // ------------------ Recent Products ------------------
-  useEffect(() => {
-    const items = JSON.parse(localStorage.getItem("recent")) || [];
-    setRecent(items);
-  }, []);
-
   // ------------------ Auto Banner Slider ------------------
   useEffect(() => {
     const interval = setInterval(() => {
@@ -88,7 +69,37 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  const featured = products.slice(0, 5);
+  // ------------------ Recent Products ------------------
+  useEffect(() => {
+    const items = JSON.parse(localStorage.getItem("recent")) || [];
+    setRecent(items);
+  }, []);
+
+  // ------------------ Filter Products ------------------
+  useEffect(() => {
+    let list = products;
+    if (activeCat !== "All") list = list.filter((p) => p.category === activeCat);
+    if (search.trim() !== "")
+      list = list.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+    setFiltered(list);
+  }, [search, activeCat, products]);
+
+  // ------------------ Search Suggestions ------------------
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+
+    if (!value.trim()) {
+      setSuggestions([]);
+      return;
+    }
+
+    const matches = products.filter((p) =>
+      p.name.toLowerCase().includes(value.toLowerCase())
+    ).slice(0, 5);
+
+    setSuggestions(matches);
+  };
 
   const addToCart = (product) => {
     let cart = JSON.parse(localStorage.getItem("cart")) || [];
@@ -102,21 +113,21 @@ export default function Home() {
     const img = (product.images && product.images[0]) || product.image || "/images/placeholder.png";
     return (
       <div className="flex-shrink-0 w-40 sm:w-44 md:w-48 bg-white rounded shadow p-3 hover:shadow-lg transition snap-start">
-        <img
-          src={img}
-          className="w-full h-32 sm:h-36 md:h-40 object-cover rounded"
-          alt={product.name}
-        />
+        <Link to={`/product/${product._id}`}>
+          <img
+            src={img}
+            className="w-full h-32 sm:h-36 md:h-40 object-cover rounded"
+            alt={product.name}
+          />
+        </Link>
         <h3 className="mt-2 text-sm font-semibold truncate">{product.name}</h3>
         <p className="text-green-600 font-bold text-sm">₹{product.price}</p>
-        <div className="flex gap-2 mt-2">
-          <button
-            onClick={() => addToCart(product)}
-            className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-          >
-            Add to Cart
-          </button>
-        </div>
+        <button
+          onClick={() => addToCart(product)}
+          className="mt-1 w-full bg-blue-600 text-white py-1 rounded text-xs"
+        >
+          Add to Cart
+        </button>
       </div>
     );
   };
@@ -136,34 +147,50 @@ export default function Home() {
     );
   };
 
+  const featured = products.slice(0, 5);
+
   return (
     <div className="max-w-7xl mx-auto p-4">
-      {/* Banner */}
+
+      {/* ---------------- Banner ---------------- */}
       <div className="w-full h-52 sm:h-64 md:h-72 rounded-xl overflow-hidden mb-6">
-        <img
-          src={banners[bannerIndex]}
-          alt="banner"
-          className="w-full h-full object-cover"
-        />
+        <img src={banners[bannerIndex]} alt="banner" className="w-full h-full object-cover" />
       </div>
 
-      {/* Carousels */}
+      {/* ---------------- Carousels ---------------- */}
       <CarouselSection title="🔥 Featured Products" items={featured} />
       <CarouselSection title="🔥 Trending Now" items={trending} />
       <CarouselSection title="💥 Top Deals" items={deals} />
       {recent.length > 0 && <CarouselSection title="🕒 Recently Viewed" items={recent} />}
 
-      {/* Search */}
-      <div className="mt-6 mb-4">
+      {/* ---------------- Search ---------------- */}
+      <div className="relative mt-6 mb-4">
         <input
           className="w-full p-3 border rounded shadow-sm"
           placeholder="Search for products..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearch}
         />
+        {suggestions.length > 0 && (
+          <ul className="absolute z-50 w-full bg-white border mt-1 rounded shadow max-h-60 overflow-y-auto">
+            {suggestions.map((p) => (
+              <li
+                key={p._id}
+                className="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                onClick={() => (window.location.href = `/product/${p._id}`)}
+              >
+                <img
+                  src={(p.images && p.images[0]) || "/images/placeholder.png"}
+                  className="w-8 h-8 object-cover rounded mr-2"
+                />
+                <span className="truncate">{p.name}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      {/* Categories + Subcategories */}
+      {/* ---------------- Categories + Subcategories ---------------- */}
       <h2 className="text-xl font-bold mb-3">Categories</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
         {catModules.map((cat) => {
@@ -193,7 +220,7 @@ export default function Home() {
         })}
       </div>
 
-      {/* Product Grid */}
+      {/* ---------------- Product Grid ---------------- */}
       <h2 className="text-xl font-bold mb-3">All Products</h2>
       {filtered.length === 0 ? (
         <div className="text-gray-500">No products found</div>
@@ -203,17 +230,17 @@ export default function Home() {
             const img = (product.images && product.images[0]) || product.image || "/images/placeholder.png";
             return (
               <div key={product._id} className="border rounded p-3 hover:shadow transition">
-                <img src={img} alt={product.name} className="w-full h-36 sm:h-40 md:h-44 object-cover rounded" />
+                <Link to={`/product/${product._id}`}>
+                  <img src={img} alt={product.name} className="w-full h-36 sm:h-40 md:h-44 object-cover rounded" />
+                </Link>
                 <h3 className="mt-2 font-semibold truncate">{product.name}</h3>
                 <p className="text-green-600 font-bold">₹{product.price}</p>
-                <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={() => addToCart(product)}
-                    className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                  >
-                    Add to Cart
-                  </button>
-                </div>
+                <button
+                  onClick={() => addToCart(product)}
+                  className="mt-1 w-full bg-blue-600 text-white py-1 rounded text-xs"
+                >
+                  Add to Cart
+                </button>
               </div>
             );
           })}
