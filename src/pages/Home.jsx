@@ -13,6 +13,7 @@ export default function Home() {
   const [trending, setTrending] = useState([]);
   const [deals, setDeals] = useState([]);
   const [quickView, setQuickView] = useState(null);
+  const [catModules, setCatModules] = useState([]);
 
   const banners = [
     "/images/banner1.jpg",
@@ -40,12 +41,17 @@ export default function Home() {
         setProducts(data);
         setFiltered(data);
 
-        const cats = [...new Set(data.map((p) => p.category || "Other"))];
-        setCategories(cats);
-
         setTrending([...data].sort((a, b) => (b.sold || 0) - (a.sold || 0)).slice(0, 6));
         setDeals(data.filter((p) => p.originalPrice && p.price < p.originalPrice).slice(0, 6));
       })
+      .catch(() => {});
+  }, []);
+
+  // ------------------ Fetch Category Module ------------------
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/categories`)
+      .then((res) => res.json())
+      .then((data) => setCatModules(data))
       .catch(() => {});
   }, []);
 
@@ -203,20 +209,28 @@ export default function Home() {
         />
       </div>
 
-      {/* Categories */}
+      {/* Categories + Subcategories */}
       <h2 className="text-xl font-bold mb-3">Categories</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveCat(cat)}
-            className={`p-3 rounded-xl border flex flex-col items-center hover:shadow ${
-              activeCat === cat ? "bg-blue-600 text-white" : "bg-white"
-            }`}
-          >
-            <span className="text-3xl">🛍️</span>
-            <span className="text-sm mt-1">{cat}</span>
-          </button>
+        {catModules.map((cat) => (
+          <div key={cat._id} className="p-3 rounded-xl border flex flex-col items-center hover:shadow">
+            <img src={cat.image || "/images/placeholder.png"} className="w-12 h-12 object-cover rounded-full" />
+            <span className="text-sm mt-1 font-semibold">{cat.name}</span>
+
+            {cat.subcategories && (
+              <div className="mt-1 text-xs text-gray-500 flex flex-wrap justify-center gap-1">
+                {cat.subcategories.map((sub) => (
+                  <button
+                    key={sub}
+                    onClick={() => setActiveCat(sub)}
+                    className="px-1 py-0.5 bg-gray-200 rounded hover:bg-blue-100 text-gray-700"
+                  >
+                    {sub}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </div>
 
