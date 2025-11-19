@@ -1,56 +1,34 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getProducts, getCategories } from "../api/api.js";
+import { getProducts, getCategories, getVendors } from "../api/api.js";
 
 export default function Home() {
-  const [products, setProducts] = useState([]);
-  const [filtered, setFiltered] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeSub, setActiveSub] = useState("All");
   const [search, setSearch] = useState("");
-  const [activeCat, setActiveCat] = useState("All");
 
-  // ------------------ Fetch Categories ------------------
+  // ------------------ Fetch Data ------------------
   useEffect(() => {
-    getCategories()
-      .then((res) => {
-        const cats = res.data || [];
-        setCategories(cats);
-      })
-      .catch(() => {});
+    getCategories().then(res => setCategories(res.data || []));
+    getVendors().then(res => setVendors(res.data || []));
+    getProducts().then(res => setProducts(res.data || []));
   }, []);
 
-  // ------------------ Fetch Products ------------------
-  useEffect(() => {
-    getProducts()
-      .then((res) => {
-        const data = res.data || [];
-        setProducts(data);
-        setFiltered(data);
-      })
-      .catch(() => {});
-  }, []);
+  // ------------------ Filtered Vendors ------------------
+  const filteredVendors = activeCategory === "All"
+    ? vendors
+    : vendors.filter(v => v.category === activeCategory && (activeSub === "All" || v.subcategories.includes(activeSub)));
 
-  // ------------------ Filter Products ------------------
-  useEffect(() => {
-    let list = products;
-
-    if (activeCat !== "All") {
-      // Filter by category or subcategory dynamically from backend
-      list = list.filter(
-        (p) =>
-          p.category === activeCat ||
-          (categories.find((c) => c.name === activeCat)?.subcategories || []).includes(p.subcategory)
-      );
-    }
-
-    if (search.trim() !== "") {
-      list = list.filter((p) =>
-        p.name.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    setFiltered(list);
-  }, [search, activeCat, products, categories]);
+  // ------------------ Filtered Products ------------------
+  const filteredProducts = products.filter(p => {
+    const matchesCategory = activeCategory === "All" || p.category === activeCategory;
+    const matchesSub = activeSub === "All" || p.subcategory === activeSub;
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+    return matchesCategory && matchesSub && matchesSearch;
+  });
 
   return (
     <div className="max-w-7xl mx-auto p-4">
@@ -62,72 +40,79 @@ export default function Home() {
           placeholder="Search for products..."
           className="w-full p-3 border rounded shadow-sm"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={e => setSearch(e.target.value)}
         />
       </div>
 
       {/* ------------------ Categories ------------------ */}
       <h2 className="text-xl font-bold mb-3">Categories</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
-        {categories.map((cat) => (
-          <div
+      <div className="flex gap-3 overflow-x-auto mb-6">
+        <button
+          onClick={() => { setActiveCategory("All"); setActiveSub("All"); }}
+          className={`px-3 py-1 rounded ${activeCategory === "All" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+        >
+          All
+        </button>
+        {categories.map(cat => (
+          <button
             key={cat._id}
-            className="p-3 rounded-xl border flex flex-col items-center hover:shadow transition"
+            onClick={() => { setActiveCategory(cat.name); setActiveSub("All"); }}
+            className={`px-3 py-1 rounded ${activeCategory === cat.name ? "bg-blue-600 text-white" : "bg-gray-200"}`}
           >
-            <span className="text-sm mt-1 font-semibold">{cat.name}</span>
-
-            {cat.subcategories && cat.subcategories.length > 0 && (
-              <div className="mt-1 text-xs text-gray-500 flex flex-wrap justify-center gap-1">
-                {cat.subcategories.map((sub) => (
-                  <button
-                    key={sub}
-                    onClick={() => setActiveCat(sub)}
-                    className="px-1 py-0.5 rounded bg-gray-200 hover:bg-blue-100 text-gray-700"
-                  >
-                    {sub}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Click category name to filter all products in that category */}
-            <button
-              onClick={() => setActiveCat(cat.name)}
-              className="mt-1 px-2 py-0.5 rounded bg-blue-600 text-white text-xs"
-            >
-              View All
-            </button>
-          </div>
+            {cat.name}
+          </button>
         ))}
       </div>
 
-      {/* ------------------ Product Grid ------------------ */}
+      {/* ------------------ Subcategories ------------------ */}
+      {activeCategory !== "All" && (
+        <div className="flex gap-2 mb-4 flex-wrap">
+          <button
+            onClick={() => setActiveSub("All")}
+            className={`px-2 py-1 rounded ${activeSub === "All" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+          >
+            All
+          </button>
+          {categories.find(c => c.name === activeCategory)?.subcategories.map(sub => (
+            <button
+              key={sub}
+              onClick={() => setActiveSub(sub)}
+              className={`px-2 py-1 rounded ${activeSub === sub ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+            >
+              {sub}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ------------------ Vendors/Shops ------------------ */}
+      {activeCategory !== "All" && filteredVendors.length > 0 && (
+        <>
+          <h2 className="text-xl font-bold mb-3">Shops</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+            {filteredVendors.map(v => (
+              <div key={v._id} className="border rounded p-3 hover:shadow transition">
+                <h3 className="font-semibold">{v.name}</h3>
+                <p className="text-sm text-gray-500">{v.subcategories.join(", ")}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ------------------ Products ------------------ */}
       <h2 className="text-xl font-bold mb-3">Products</h2>
-      {filtered.length === 0 ? (
+      {filteredProducts.length === 0 ? (
         <div className="text-gray-500">No products found</div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map((product) => {
-            const img =
-              (product.images && product.images[0]) ||
-              product.image ||
-              "https://via.placeholder.com/300";
-            return (
-              <Link
-                to={`/product/${product._id}`}
-                key={product._id}
-                className="border rounded p-3 hover:shadow transition"
-              >
-                <img
-                  src={img}
-                  alt={product.name}
-                  className="w-full h-36 sm:h-40 md:h-44 object-cover rounded"
-                />
-                <h3 className="mt-2 font-semibold truncate">{product.name}</h3>
-                <p className="text-green-600 font-bold">₹{product.price}</p>
-              </Link>
-            );
-          })}
+          {filteredProducts.map(p => (
+            <Link key={p._id} to={`/product/${p._id}`} className="border rounded p-3 hover:shadow transition">
+              <img src={p.images?.[0] || p.image || "https://via.placeholder.com/300"} alt={p.name} className="w-full h-36 sm:h-40 md:h-44 object-cover rounded" />
+              <h3 className="mt-2 font-semibold truncate">{p.name}</h3>
+              <p className="text-green-600 font-bold">₹{p.price}</p>
+            </Link>
+          ))}
         </div>
       )}
     </div>
