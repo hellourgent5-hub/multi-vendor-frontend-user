@@ -1,19 +1,18 @@
 import React, { useContext, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext.jsx";
-import { getCategories } from "../api/api.js"; // API call to fetch categories
+import { getCategories } from "../api/api.js";
 
 export default function Navbar() {
   const { user, setUser, setToken } = useContext(AuthContext);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [catOpen, setCatOpen] = useState(false);
+  const [catOpen, setCatOpen] = useState(null); // track which category dropdown is open
   const [categories, setCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch categories from backend
   useEffect(() => {
-    getCategories().then(res => setCategories(res.data));
+    getCategories().then((res) => setCategories(res.data));
   }, []);
 
   const logout = () => {
@@ -38,7 +37,6 @@ export default function Navbar() {
   return (
     <nav className="bg-white shadow sticky top-0 z-20">
       <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-
         {/* Logo */}
         <Link to="/" className="text-xl font-bold">
           MultiVendor
@@ -46,34 +44,44 @@ export default function Navbar() {
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center space-x-6">
-
           {/* Categories Dropdown */}
-          <div
-            className="relative cursor-pointer"
-            onMouseEnter={() => setCatOpen(true)}
-            onMouseLeave={() => setCatOpen(false)}
-          >
-            <span className="text-md font-semibold">Categories ▾</span>
-
-            {catOpen && (
-              <div className="absolute top-8 left-0 bg-white shadow-lg border rounded w-48 text-sm z-10">
-                <Link to="/categories" className="block px-4 py-2 hover:bg-gray-100">
-                  All Categories
-                </Link>
-                {categories.map((cat) => (
+          <div className="relative">
+            <span className="text-md font-semibold cursor-pointer">Categories ▾</span>
+            <div className="absolute top-8 left-0 bg-white shadow-lg border rounded w-64 text-sm z-10">
+              {categories.map((cat) => (
+                <div
+                  key={cat._id}
+                  className="group relative"
+                  onMouseEnter={() => setCatOpen(cat._id)}
+                  onMouseLeave={() => setCatOpen(null)}
+                >
                   <Link
-                    key={cat._id}
                     to={`/category/${cat.name}`}
                     className="block px-4 py-2 hover:bg-gray-100"
                   >
-                    {cat.name}
+                    {cat.name} {cat.subcategories.length > 0 && "▸"}
                   </Link>
-                ))}
-              </div>
-            )}
+
+                  {/* Subcategories */}
+                  {cat.subcategories.length > 0 && catOpen === cat._id && (
+                    <div className="absolute top-0 left-full bg-white shadow-lg border rounded w-48 text-sm">
+                      {cat.subcategories.map((sub, idx) => (
+                        <Link
+                          key={idx}
+                          to={`/category/${cat.name}/${sub}`}
+                          className="block px-4 py-2 hover:bg-gray-100"
+                        >
+                          {sub}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Search Bar */}
+          {/* Search */}
           <form onSubmit={handleSearch} className="flex items-center">
             <input
               type="text"
@@ -82,7 +90,10 @@ export default function Navbar() {
               placeholder="Search products..."
               className="border px-2 py-1 rounded-l text-sm"
             />
-            <button type="submit" className="bg-blue-600 text-white px-3 py-1 rounded-r text-sm">
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-3 py-1 rounded-r text-sm"
+            >
               🔍
             </button>
           </form>
@@ -122,10 +133,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Menu Button */}
-        <button
-          className="md:hidden text-2xl"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
+        <button className="md:hidden text-2xl" onClick={() => setMenuOpen(!menuOpen)}>
           ☰
         </button>
       </div>
@@ -133,8 +141,7 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden bg-white shadow px-4 py-3 space-y-4">
-
-          {/* Mobile Search */}
+          {/* Search */}
           <form onSubmit={handleSearch} className="flex mb-2">
             <input
               type="text"
@@ -143,31 +150,42 @@ export default function Navbar() {
               placeholder="Search..."
               className="border px-2 py-1 rounded-l text-sm w-full"
             />
-            <button type="submit" className="bg-blue-600 text-white px-3 py-1 rounded-r text-sm">
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-3 py-1 rounded-r text-sm"
+            >
               🔍
             </button>
           </form>
 
-          {/* Mobile Categories */}
+          {/* Categories */}
           <div>
             <p className="font-semibold">Categories</p>
             <div className="pl-3 mt-2 space-y-2">
-              <Link
-                to="/categories"
-                onClick={() => setMenuOpen(false)}
-                className="block text-sm text-gray-700"
-              >
-                All Categories
-              </Link>
               {categories.map((cat) => (
-                <Link
-                  key={cat._id}
-                  to={`/category/${cat.name}`}
-                  onClick={() => setMenuOpen(false)}
-                  className="block text-sm text-gray-700"
-                >
-                  • {cat.name}
-                </Link>
+                <div key={cat._id}>
+                  <Link
+                    to={`/category/${cat.name}`}
+                    onClick={() => setMenuOpen(false)}
+                    className="block text-sm text-gray-700"
+                  >
+                    {cat.name}
+                  </Link>
+                  {cat.subcategories.length > 0 && (
+                    <div className="pl-4 mt-1 space-y-1">
+                      {cat.subcategories.map((sub, idx) => (
+                        <Link
+                          key={idx}
+                          to={`/category/${cat.name}/${sub}`}
+                          onClick={() => setMenuOpen(false)}
+                          className="block text-sm text-gray-600"
+                        >
+                          • {sub}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -188,14 +206,26 @@ export default function Navbar() {
           {user ? (
             <>
               <p className="text-sm">Hi, {user.name}</p>
-              <Link to="/profile" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-700">
+              <Link
+                to="/profile"
+                onClick={() => setMenuOpen(false)}
+                className="block text-sm text-gray-700"
+              >
                 Profile
               </Link>
-              <Link to="/wishlist" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-700">
+              <Link
+                to="/wishlist"
+                onClick={() => setMenuOpen(false)}
+                className="block text-sm text-gray-700"
+              >
                 Wishlist
               </Link>
               {user.isAdmin && (
-                <Link to="/admin" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-700">
+                <Link
+                  to="/admin"
+                  onClick={() => setMenuOpen(false)}
+                  className="block text-sm text-gray-700"
+                >
                   Admin
                 </Link>
               )}
