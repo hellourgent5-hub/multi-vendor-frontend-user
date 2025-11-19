@@ -12,7 +12,6 @@ export default function Home() {
   const [bannerIndex, setBannerIndex] = useState(0);
   const [trending, setTrending] = useState([]);
   const [deals, setDeals] = useState([]);
-  const [quickView, setQuickView] = useState(null);
   const [catModules, setCatModules] = useState([]);
 
   const banners = [
@@ -22,16 +21,25 @@ export default function Home() {
   ];
 
   const featuredRef = useRef(null);
-  const trendingRef = useRef(null);
-  const dealsRef = useRef(null);
-  const recentRef = useRef(null);
 
-  const [activeSlide, setActiveSlide] = useState({
-    featured: 0,
-    trending: 0,
-    deals: 0,
-    recent: 0,
-  });
+  // Default images and subcategories in case backend doesn't provide
+  const defaultCategoryImages = {
+    Mobiles: "/images/mobile.jpg",
+    Electronics: "/images/electronics.jpg",
+    Fashion: "/images/fashion.jpg",
+    Beauty: "/images/beauty.jpg",
+    Grocery: "/images/grocery.jpg",
+    Home: "/images/home.jpg",
+  };
+
+  const defaultSubcategories = {
+    Mobiles: ["Smartphones", "Feature Phones"],
+    Electronics: ["TV", "Audio"],
+    Fashion: ["Men", "Women"],
+    Beauty: ["Makeup", "Skincare"],
+    Grocery: ["Vegetables", "Snacks"],
+    Home: ["Furniture", "Decor"],
+  };
 
   // ------------------ Fetch Products ------------------
   useEffect(() => {
@@ -47,7 +55,7 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
-  // ------------------ Fetch Category Module ------------------
+  // ------------------ Fetch Categories ------------------
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/categories`)
       .then((res) => res.json())
@@ -90,15 +98,6 @@ export default function Home() {
     alert(`${product.name} added to cart`);
   };
 
-  const scrollCarousel = (el, direction = 1) => {
-    if (!el) return;
-    const cardWidth = el.firstChild?.offsetWidth + 16 || 216;
-    el.scrollBy({
-      left: direction * cardWidth,
-      behavior: "smooth",
-    });
-  };
-
   const CarouselCard = ({ product }) => {
     const img = (product.images && product.images[0]) || product.image || "/images/placeholder.png";
     return (
@@ -117,65 +116,20 @@ export default function Home() {
           >
             Add to Cart
           </button>
-          <button
-            onClick={() => setQuickView(product)}
-            className="bg-gray-200 px-2 py-1 rounded text-xs"
-          >
-            Quick View
-          </button>
         </div>
       </div>
     );
   };
 
-  const CarouselSection = ({ title, items, refEl, keyName }) => {
+  const CarouselSection = ({ title, items }) => {
     if (!items || items.length === 0) return null;
-
-    const handleScroll = () => {
-      const el = refEl.current;
-      if (!el) return;
-      const cardWidth = el.firstChild?.offsetWidth + 16 || 216;
-      const index = Math.round(el.scrollLeft / cardWidth);
-      setActiveSlide((prev) => ({ ...prev, [keyName]: index }));
-    };
 
     return (
       <div className="mb-6">
         <h2 className="text-xl font-bold mb-3">{title}</h2>
-        <div className="relative group">
-          <div
-            ref={refEl}
-            onScroll={handleScroll}
-            className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scroll-smooth"
-          >
-            {items.map((item) => (
-              <CarouselCard key={item._id} product={item} />
-            ))}
-          </div>
-          {/* Arrows (show only on hover) */}
-          <button
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white p-2 rounded-full shadow hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition"
-            onClick={() => scrollCarousel(refEl.current, -1)}
-          >
-            ◀
-          </button>
-          <button
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white p-2 rounded-full shadow hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition"
-            onClick={() => scrollCarousel(refEl.current, 1)}
-          >
-            ▶
-          </button>
-        </div>
-
-        {/* Slide Indicators */}
-        <div className="flex justify-center gap-1 mt-2">
-          {items.map((_, idx) => (
-            <span
-              key={idx}
-              className={`w-2 h-2 rounded-full ${
-                activeSlide[keyName] === idx ? "bg-blue-600" : "bg-gray-300"
-              }`}
-            />
+        <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scroll-smooth">
+          {items.map((item) => (
+            <CarouselCard key={item._id} product={item} />
           ))}
         </div>
       </div>
@@ -194,10 +148,10 @@ export default function Home() {
       </div>
 
       {/* Carousels */}
-      <CarouselSection title="🔥 Featured Products" items={featured} refEl={featuredRef} keyName="featured" />
-      <CarouselSection title="🔥 Trending Now" items={trending} refEl={trendingRef} keyName="trending" />
-      <CarouselSection title="💥 Top Deals" items={deals} refEl={dealsRef} keyName="deals" />
-      {recent.length > 0 && <CarouselSection title="🕒 Recently Viewed" items={recent} refEl={recentRef} keyName="recent" />}
+      <CarouselSection title="🔥 Featured Products" items={featured} />
+      <CarouselSection title="🔥 Trending Now" items={trending} />
+      <CarouselSection title="💥 Top Deals" items={deals} />
+      {recent.length > 0 && <CarouselSection title="🕒 Recently Viewed" items={recent} />}
 
       {/* Search */}
       <div className="mt-6 mb-4">
@@ -212,26 +166,31 @@ export default function Home() {
       {/* Categories + Subcategories */}
       <h2 className="text-xl font-bold mb-3">Categories</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
-        {catModules.map((cat) => (
-          <div key={cat._id} className="p-3 rounded-xl border flex flex-col items-center hover:shadow">
-            <img src={cat.image || "/images/placeholder.png"} className="w-12 h-12 object-cover rounded-full" />
-            <span className="text-sm mt-1 font-semibold">{cat.name}</span>
+        {catModules.map((cat) => {
+          const img = cat.image || defaultCategoryImages[cat.name] || "/images/placeholder.png";
+          const subs = cat.subcategories || defaultSubcategories[cat.name] || [];
 
-            {cat.subcategories && (
-              <div className="mt-1 text-xs text-gray-500 flex flex-wrap justify-center gap-1">
-                {cat.subcategories.map((sub) => (
-                  <button
-                    key={sub}
-                    onClick={() => setActiveCat(sub)}
-                    className="px-1 py-0.5 bg-gray-200 rounded hover:bg-blue-100 text-gray-700"
-                  >
-                    {sub}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+          return (
+            <div key={cat._id} className="p-3 rounded-xl border flex flex-col items-center hover:shadow">
+              <img src={img} className="w-12 h-12 object-cover rounded-full" />
+              <span className="text-sm mt-1 font-semibold">{cat.name}</span>
+
+              {subs.length > 0 && (
+                <div className="mt-1 text-xs text-gray-500 flex flex-wrap justify-center gap-1">
+                  {subs.map((sub) => (
+                    <button
+                      key={sub}
+                      onClick={() => setActiveCat(sub)}
+                      className="px-1 py-0.5 bg-gray-200 rounded hover:bg-blue-100 text-gray-700"
+                    >
+                      {sub}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Product Grid */}
@@ -254,47 +213,10 @@ export default function Home() {
                   >
                     Add to Cart
                   </button>
-                  <button
-                    onClick={() => setQuickView(product)}
-                    className="bg-gray-200 px-2 py-1 rounded text-xs"
-                  >
-                    Quick View
-                  </button>
                 </div>
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Quick View Modal */}
-      {quickView && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-80 relative">
-            <button
-              onClick={() => setQuickView(null)}
-              className="absolute top-2 right-2 text-gray-600 font-bold"
-            >
-              ×
-            </button>
-            <img
-              src={(quickView.images && quickView.images[0]) || quickView.image || "/images/placeholder.png"}
-              className="w-full h-40 object-cover rounded mb-4"
-              alt={quickView.name}
-            />
-            <h3 className="font-semibold text-lg mb-2">{quickView.name}</h3>
-            <p className="text-green-600 font-bold mb-2">₹{quickView.price}</p>
-            {quickView.originalPrice && quickView.price < quickView.originalPrice && (
-              <p className="text-red-600 line-through text-sm">₹{quickView.originalPrice}</p>
-            )}
-            <p className="text-sm mb-4">{quickView.description || "No description available."}</p>
-            <button
-              onClick={() => { addToCart(quickView); setQuickView(null); }}
-              className="bg-blue-600 text-white w-full py-2 rounded"
-            >
-              Add to Cart
-            </button>
-          </div>
         </div>
       )}
     </div>
