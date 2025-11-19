@@ -7,7 +7,6 @@ export default function Navbar() {
   const { user, setUser, setToken } = useContext(AuthContext);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [catOpen, setCatOpen] = useState(null); // track which category dropdown is open
   const [categories, setCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -35,7 +34,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow sticky top-0 z-20">
+    <nav className="bg-white shadow sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
         {/* Logo */}
         <Link to="/" className="text-xl font-bold">
@@ -45,16 +44,12 @@ export default function Navbar() {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center space-x-6">
           {/* Categories Dropdown */}
-          <div className="relative">
+          <div className="relative group">
             <span className="text-md font-semibold cursor-pointer">Categories ▾</span>
-            <div className="absolute top-8 left-0 bg-white shadow-lg border rounded w-64 text-sm z-10">
+
+            <div className="absolute top-full left-0 mt-1 bg-white shadow-lg border rounded w-64 text-sm opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
               {categories.map((cat) => (
-                <div
-                  key={cat._id}
-                  className="group relative"
-                  onMouseEnter={() => setCatOpen(cat._id)}
-                  onMouseLeave={() => setCatOpen(null)}
-                >
+                <div key={cat._id} className="relative group">
                   <Link
                     to={`/category/${cat.name}`}
                     className="block px-4 py-2 hover:bg-gray-100"
@@ -63,8 +58,8 @@ export default function Navbar() {
                   </Link>
 
                   {/* Subcategories */}
-                  {cat.subcategories.length > 0 && catOpen === cat._id && (
-                    <div className="absolute top-0 left-full bg-white shadow-lg border rounded w-48 text-sm">
+                  {cat.subcategories.length > 0 && (
+                    <div className="absolute top-0 left-full mt-0 ml-0 bg-white shadow-lg border rounded w-48 text-sm opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                       {cat.subcategories.map((sub, idx) => (
                         <Link
                           key={idx}
@@ -133,7 +128,10 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Menu Button */}
-        <button className="md:hidden text-2xl" onClick={() => setMenuOpen(!menuOpen)}>
+        <button
+          className="md:hidden text-2xl"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
           ☰
         </button>
       </div>
