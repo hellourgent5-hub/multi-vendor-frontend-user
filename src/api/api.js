@@ -16,7 +16,7 @@ API.interceptors.request.use((config) => {
 =========================== */
 export const registerUser = (data) => API.post("/auth/register", data);
 export const loginUser = (data) => API.post("/auth/login", data);
-export const getCurrentUser = () => API.get("/auth/me"); // new
+export const getCurrentUser = () => API.get("/auth/me");
 
 /* ===========================
       USERS
@@ -34,6 +34,12 @@ export const getProduct = (id) => API.get(`/products/${id}`);
 export const createProduct = (data) => API.post("/products", data);
 export const updateProduct = (id, data) => API.put(`/products/${id}`, data);
 export const deleteProduct = (id) => API.delete(`/products/${id}`);
+
+// FILTER PRODUCTS
+export const filterProducts = (params) => {
+  // params example: { category: "Mobiles", minPrice: 100, maxPrice: 5000 }
+  return API.get("/products", { params });
+};
 
 /* ===========================
       CATEGORIES
