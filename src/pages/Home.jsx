@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { getProducts } from "../api/api.js";
 
@@ -12,7 +12,6 @@ export default function Home() {
   const [bannerIndex, setBannerIndex] = useState(0);
   const [trending, setTrending] = useState([]);
   const [deals, setDeals] = useState([]);
-  const [cart, setCart] = useState([]);
   const [quickView, setQuickView] = useState(null);
 
   const banners = [
@@ -20,6 +19,18 @@ export default function Home() {
     "/images/banner2.jpg",
     "/images/banner3.jpg",
   ];
+
+  const featuredRef = useRef(null);
+  const trendingRef = useRef(null);
+  const dealsRef = useRef(null);
+  const recentRef = useRef(null);
+
+  const [activeSlide, setActiveSlide] = useState({
+    featured: 0,
+    trending: 0,
+    deals: 0,
+    recent: 0,
+  });
 
   // ------------------ Fetch Products ------------------
   useEffect(() => {
@@ -29,17 +40,11 @@ export default function Home() {
         setProducts(data);
         setFiltered(data);
 
-        // Extract unique categories
         const cats = [...new Set(data.map((p) => p.category || "Other"))];
         setCategories(cats);
 
-        // Trending (top 6 sold)
-        const trendingItems = [...data].sort((a, b) => (b.sold || 0) - (a.sold || 0)).slice(0, 6);
-        setTrending(trendingItems);
-
-        // Deals (discounted products)
-        const dealItems = data.filter((p) => p.originalPrice && p.price < p.originalPrice).slice(0, 6);
-        setDeals(dealItems);
+        setTrending([...data].sort((a, b) => (b.sold || 0) - (a.sold || 0)).slice(0, 6));
+        setDeals(data.filter((p) => p.originalPrice && p.price < p.originalPrice).slice(0, 6));
       })
       .catch(() => {});
   }, []);
@@ -49,7 +54,9 @@ export default function Home() {
     let list = products;
     if (activeCat !== "All") list = list.filter((p) => p.category === activeCat);
     if (search.trim() !== "")
-      list = list.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+      list = list.filter((p) =>
+        p.name.toLowerCase().includes(search.toLowerCase())
+      );
     setFiltered(list);
   }, [search, activeCat, products]);
 
@@ -69,21 +76,110 @@ export default function Home() {
 
   const featured = products.slice(0, 5);
 
-  // ------------------ Add to Cart ------------------
   const addToCart = (product) => {
-    setCart((prev) => {
-      const exists = prev.find((p) => p._id === product._id);
-      if (exists) return prev; // already in cart
-      return [...prev, { ...product, quantity: 1 }];
-    });
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    const exists = cart.find((p) => p._id === product._id);
+    if (!exists) cart.push({ ...product, quantity: 1 });
+    localStorage.setItem("cart", JSON.stringify(cart));
     alert(`${product.name} added to cart`);
+  };
+
+  const scrollCarousel = (el, direction = 1) => {
+    if (!el) return;
+    const cardWidth = el.firstChild?.offsetWidth + 16 || 216;
+    el.scrollBy({
+      left: direction * cardWidth,
+      behavior: "smooth",
+    });
+  };
+
+  const CarouselCard = ({ product }) => {
+    const img = (product.images && product.images[0]) || product.image || "/images/placeholder.png";
+    return (
+      <div className="flex-shrink-0 w-40 sm:w-44 md:w-48 bg-white rounded shadow p-3 hover:shadow-lg transition snap-start">
+        <img
+          src={img}
+          className="w-full h-32 sm:h-36 md:h-40 object-cover rounded"
+          alt={product.name}
+        />
+        <h3 className="mt-2 text-sm font-semibold truncate">{product.name}</h3>
+        <p className="text-green-600 font-bold text-sm">₹{product.price}</p>
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => addToCart(product)}
+            className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
+          >
+            Add to Cart
+          </button>
+          <button
+            onClick={() => setQuickView(product)}
+            className="bg-gray-200 px-2 py-1 rounded text-xs"
+          >
+            Quick View
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const CarouselSection = ({ title, items, refEl, keyName }) => {
+    if (!items || items.length === 0) return null;
+
+    const handleScroll = () => {
+      const el = refEl.current;
+      if (!el) return;
+      const cardWidth = el.firstChild?.offsetWidth + 16 || 216;
+      const index = Math.round(el.scrollLeft / cardWidth);
+      setActiveSlide((prev) => ({ ...prev, [keyName]: index }));
+    };
+
+    return (
+      <div className="mb-6">
+        <h2 className="text-xl font-bold mb-3">{title}</h2>
+        <div className="relative group">
+          <div
+            ref={refEl}
+            onScroll={handleScroll}
+            className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scroll-smooth"
+          >
+            {items.map((item) => (
+              <CarouselCard key={item._id} product={item} />
+            ))}
+          </div>
+          {/* Arrows (show only on hover) */}
+          <button
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white p-2 rounded-full shadow hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition"
+            onClick={() => scrollCarousel(refEl.current, -1)}
+          >
+            ◀
+          </button>
+          <button
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white p-2 rounded-full shadow hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition"
+            onClick={() => scrollCarousel(refEl.current, 1)}
+          >
+            ▶
+          </button>
+        </div>
+
+        {/* Slide Indicators */}
+        <div className="flex justify-center gap-1 mt-2">
+          {items.map((_, idx) => (
+            <span
+              key={idx}
+              className={`w-2 h-2 rounded-full ${
+                activeSlide[keyName] === idx ? "bg-blue-600" : "bg-gray-300"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
     <div className="max-w-7xl mx-auto p-4">
-
-      {/* ------------------ Banner ------------------ */}
-      <div className="w-full h-52 md:h-72 rounded-xl overflow-hidden mb-6">
+      {/* Banner */}
+      <div className="w-full h-52 sm:h-64 md:h-72 rounded-xl overflow-hidden mb-6">
         <img
           src={banners[bannerIndex]}
           alt="banner"
@@ -91,103 +187,13 @@ export default function Home() {
         />
       </div>
 
-      {/* ------------------ Featured Products ------------------ */}
-      <h2 className="text-xl font-bold mb-3">🔥 Featured Products</h2>
-      <div className="flex gap-4 overflow-x-auto pb-3">
-        {featured.map((item) => {
-          const img = (item.images && item.images[0]) || item.image || "/images/placeholder.png";
-          return (
-            <div key={item._id} className="min-w-[150px] bg-white rounded shadow p-3 hover:shadow-lg transition relative">
-              <img src={img} className="w-full h-28 object-cover rounded" alt={item.name} />
-              <h3 className="mt-2 text-sm font-semibold truncate">{item.name}</h3>
-              <p className="text-green-600 font-bold text-sm">₹{item.price}</p>
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => addToCart(item)}
-                  className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                >
-                  Add to Cart
-                </button>
-                <button
-                  onClick={() => setQuickView(item)}
-                  className="bg-gray-200 px-2 py-1 rounded text-xs"
-                >
-                  Quick View
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Carousels */}
+      <CarouselSection title="🔥 Featured Products" items={featured} refEl={featuredRef} keyName="featured" />
+      <CarouselSection title="🔥 Trending Now" items={trending} refEl={trendingRef} keyName="trending" />
+      <CarouselSection title="💥 Top Deals" items={deals} refEl={dealsRef} keyName="deals" />
+      {recent.length > 0 && <CarouselSection title="🕒 Recently Viewed" items={recent} refEl={recentRef} keyName="recent" />}
 
-      {/* ------------------ Trending Products ------------------ */}
-      {trending.length > 0 && (
-        <>
-          <h2 className="text-xl font-bold mt-6 mb-3">🔥 Trending Now</h2>
-          <div className="flex gap-4 overflow-x-auto pb-3">
-            {trending.map((p) => {
-              const img = (p.images && p.images[0]) || p.image || "/images/placeholder.png";
-              return (
-                <div key={p._id} className="min-w-[150px] bg-white rounded shadow p-3 hover:shadow-lg transition relative">
-                  <img src={img} className="w-full h-28 object-cover rounded" alt={p.name} />
-                  <h3 className="mt-2 text-sm font-semibold truncate">{p.name}</h3>
-                  <p className="text-green-600 font-bold text-sm">₹{p.price}</p>
-                  <div className="flex gap-2 mt-2">
-                    <button
-                      onClick={() => addToCart(p)}
-                      className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                    >
-                      Add to Cart
-                    </button>
-                    <button
-                      onClick={() => setQuickView(p)}
-                      className="bg-gray-200 px-2 py-1 rounded text-xs"
-                    >
-                      Quick View
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {/* ------------------ Deals Section ------------------ */}
-      {deals.length > 0 && (
-        <>
-          <h2 className="text-xl font-bold mt-6 mb-3">💥 Top Deals</h2>
-          <div className="flex gap-4 overflow-x-auto pb-3">
-            {deals.map((d) => {
-              const img = (d.images && d.images[0]) || d.image || "/images/placeholder.png";
-              return (
-                <div key={d._id} className="min-w-[150px] bg-white rounded shadow p-3 hover:shadow-lg transition relative">
-                  <img src={img} className="w-full h-28 object-cover rounded" alt={d.name} />
-                  <h3 className="mt-2 text-sm font-semibold truncate">{d.name}</h3>
-                  <p className="text-red-600 line-through text-sm">₹{d.originalPrice}</p>
-                  <p className="text-green-600 font-bold text-sm">₹{d.price}</p>
-                  <div className="flex gap-2 mt-2">
-                    <button
-                      onClick={() => addToCart(d)}
-                      className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                    >
-                      Add to Cart
-                    </button>
-                    <button
-                      onClick={() => setQuickView(d)}
-                      className="bg-gray-200 px-2 py-1 rounded text-xs"
-                    >
-                      Quick View
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {/* ------------------ Search ------------------ */}
+      {/* Search */}
       <div className="mt-6 mb-4">
         <input
           className="w-full p-3 border rounded shadow-sm"
@@ -197,9 +203,9 @@ export default function Home() {
         />
       </div>
 
-      {/* ------------------ Categories ------------------ */}
+      {/* Categories */}
       <h2 className="text-xl font-bold mb-3">Categories</h2>
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
         {categories.map((cat) => (
           <button
             key={cat}
@@ -214,17 +220,17 @@ export default function Home() {
         ))}
       </div>
 
-      {/* ------------------ Product Grid ------------------ */}
+      {/* Product Grid */}
       <h2 className="text-xl font-bold mb-3">All Products</h2>
       {filtered.length === 0 ? (
         <div className="text-gray-500">No products found</div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((product) => {
             const img = (product.images && product.images[0]) || product.image || "/images/placeholder.png";
             return (
-              <div key={product._id} className="border rounded p-3 hover:shadow transition relative">
-                <img src={img} alt={product.name} className="w-full h-40 object-cover rounded" />
+              <div key={product._id} className="border rounded p-3 hover:shadow transition">
+                <img src={img} alt={product.name} className="w-full h-36 sm:h-40 md:h-44 object-cover rounded" />
                 <h3 className="mt-2 font-semibold truncate">{product.name}</h3>
                 <p className="text-green-600 font-bold">₹{product.price}</p>
                 <div className="flex gap-2 mt-2">
@@ -247,27 +253,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* ------------------ Recently Viewed ------------------ */}
-      {recent.length > 0 && (
-        <>
-          <h2 className="text-xl font-bold mt-6 mb-3">🕒 Recently Viewed</h2>
-          <div className="flex gap-4 overflow-x-auto pb-3">
-            {recent.map((r) => (
-              <Link
-                key={r._id}
-                to={`/product/${r._id}`}
-                className="min-w-[160px] shadow p-3 rounded"
-              >
-                <img src={r.image} className="rounded" alt={r.name} />
-                <h3 className="font-semibold mt-2 truncate">{r.name}</h3>
-                <p className="text-green-600 font-bold">₹{r.price}</p>
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* ------------------ Quick View Modal ------------------ */}
+      {/* Quick View Modal */}
       {quickView && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-80 relative">
@@ -297,7 +283,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
