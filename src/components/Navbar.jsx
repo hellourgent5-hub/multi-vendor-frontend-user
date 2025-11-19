@@ -1,12 +1,20 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext.jsx";
+import { getCategories } from "../api/api.js"; // API call to fetch categories
 
 export default function Navbar() {
   const { user, setUser, setToken } = useContext(AuthContext);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch categories from backend
+  useEffect(() => {
+    getCategories().then(res => setCategories(res.data));
+  }, []);
 
   const logout = () => {
     setUser(null);
@@ -18,16 +26,14 @@ export default function Navbar() {
   const cart = JSON.parse(localStorage.getItem("cart") || "[]");
   const cartCount = cart.reduce((acc, i) => acc + (i.quantity || 1), 0);
 
-  // Temporary static categories (later we connect to backend)
-  const categories = [
-    "Electronics",
-    "Fashion",
-    "Home Appliances",
-    "Grocery",
-    "Mobiles",
-    "Beauty",
-    "Sports",
-  ];
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim() !== "") {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery("");
+      setMenuOpen(false);
+    }
+  };
 
   return (
     <nav className="bg-white shadow sticky top-0 z-20">
@@ -50,19 +56,36 @@ export default function Navbar() {
             <span className="text-md font-semibold">Categories ▾</span>
 
             {catOpen && (
-              <div className="absolute top-8 left-0 bg-white shadow-lg border rounded w-48 text-sm">
+              <div className="absolute top-8 left-0 bg-white shadow-lg border rounded w-48 text-sm z-10">
+                <Link to="/categories" className="block px-4 py-2 hover:bg-gray-100">
+                  All Categories
+                </Link>
                 {categories.map((cat) => (
                   <Link
-                    key={cat}
-                    to={`/category/${cat}`}
+                    key={cat._id}
+                    to={`/category/${cat.name}`}
                     className="block px-4 py-2 hover:bg-gray-100"
                   >
-                    {cat}
+                    {cat.name}
                   </Link>
                 ))}
               </div>
             )}
           </div>
+
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="flex items-center">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search products..."
+              className="border px-2 py-1 rounded-l text-sm"
+            />
+            <button type="submit" className="bg-blue-600 text-white px-3 py-1 rounded-r text-sm">
+              🔍
+            </button>
+          </form>
 
           {/* Cart */}
           <Link to="/cart" className="relative flex items-center text-lg font-semibold">
@@ -72,12 +95,25 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Login or Profile */}
+          {/* User Menu */}
           {user ? (
-            <>
+            <div className="flex items-center space-x-3">
               <span className="text-sm">Hi, {user.name}</span>
-              <button onClick={logout} className="text-sm text-red-600">Logout</button>
-            </>
+              <Link to="/profile" className="text-sm text-gray-700 hover:text-blue-600">
+                Profile
+              </Link>
+              <Link to="/wishlist" className="text-sm text-gray-700 hover:text-blue-600">
+                Wishlist
+              </Link>
+              {user.isAdmin && (
+                <Link to="/admin" className="text-sm text-gray-700 hover:text-blue-600">
+                  Admin
+                </Link>
+              )}
+              <button onClick={logout} className="text-sm text-red-600">
+                Logout
+              </button>
+            </div>
           ) : (
             <Link to="/login" className="text-sm text-blue-600">
               Login / Register
@@ -94,28 +130,49 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden bg-white shadow px-4 py-3 space-y-4">
+
+          {/* Mobile Search */}
+          <form onSubmit={handleSearch} className="flex mb-2">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search..."
+              className="border px-2 py-1 rounded-l text-sm w-full"
+            />
+            <button type="submit" className="bg-blue-600 text-white px-3 py-1 rounded-r text-sm">
+              🔍
+            </button>
+          </form>
 
           {/* Mobile Categories */}
           <div>
             <p className="font-semibold">Categories</p>
             <div className="pl-3 mt-2 space-y-2">
+              <Link
+                to="/categories"
+                onClick={() => setMenuOpen(false)}
+                className="block text-sm text-gray-700"
+              >
+                All Categories
+              </Link>
               {categories.map((cat) => (
                 <Link
-                  key={cat}
-                  to={`/category/${cat}`}
+                  key={cat._id}
+                  to={`/category/${cat.name}`}
                   onClick={() => setMenuOpen(false)}
                   className="block text-sm text-gray-700"
                 >
-                  • {cat}
+                  • {cat.name}
                 </Link>
               ))}
             </div>
           </div>
 
-          {/* Mobile Cart */}
+          {/* Cart */}
           <Link
             to="/cart"
             onClick={() => setMenuOpen(false)}
@@ -127,10 +184,21 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Mobile Auth */}
+          {/* User */}
           {user ? (
             <>
               <p className="text-sm">Hi, {user.name}</p>
+              <Link to="/profile" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-700">
+                Profile
+              </Link>
+              <Link to="/wishlist" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-700">
+                Wishlist
+              </Link>
+              {user.isAdmin && (
+                <Link to="/admin" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-700">
+                  Admin
+                </Link>
+              )}
               <button
                 onClick={() => {
                   logout();
