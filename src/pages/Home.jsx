@@ -1,62 +1,51 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { getProducts } from "../api/api.js";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-  const [catModules, setCatModules] = useState([]);
+  const [searchText, setSearchText] = useState("");
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState("All");
 
   const defaultCategoryImages = {
-    Mobiles: "https://via.placeholder.com/100?text=Mobiles",
-    Electronics: "https://via.placeholder.com/100?text=Electronics",
+    Restaurants: "https://via.placeholder.com/100?text=Restaurants",
+    Grocery: "https://via.placeholder.com/100?text=Grocery",
     Fashion: "https://via.placeholder.com/100?text=Fashion",
     Beauty: "https://via.placeholder.com/100?text=Beauty",
-    Grocery: "https://via.placeholder.com/100?text=Grocery",
+    Electronics: "https://via.placeholder.com/100?text=Electronics",
     Home: "https://via.placeholder.com/100?text=Home",
   };
 
   const defaultSubcategories = {
-    Mobiles: ["Smartphones", "Feature Phones"],
-    Electronics: ["TV", "Audio"],
-    Fashion: ["Men", "Women"],
+    Restaurants: ["Biryani", "Snacks", "Cold Drinks"],
+    Grocery: ["Vegetables", "Fruits", "Dairy"],
+    Fashion: ["Men", "Women", "Kids"],
     Beauty: ["Makeup", "Skincare"],
-    Grocery: ["Vegetables", "Snacks"],
+    Electronics: ["TV", "Audio"],
     Home: ["Furniture", "Decor"],
   };
 
-  // ------------------ Fetch Products ------------------
+  // Fetch products
   useEffect(() => {
     getProducts()
-      .then((res) => {
-        const data = res.data || [];
-        setProducts(data);
-        setFiltered(data);
-      })
-      .catch(() => {});
+      .then((res) => setProducts(res.data || []))
+      .catch(console.error);
   }, []);
 
-  // ------------------ Load Categories with Defaults ------------------
+  // Debounce search input
   useEffect(() => {
-    // Always use defaults
-    const categories = Object.keys(defaultCategoryImages).map((name) => ({
-      _id: name,
-      name,
-      image: defaultCategoryImages[name],
-      subcategories: defaultSubcategories[name],
-    }));
-    setCatModules(categories);
-  }, []);
+    const timer = setTimeout(() => setSearch(searchText), 300);
+    return () => clearTimeout(timer);
+  }, [searchText]);
 
-  // ------------------ Filter Products ------------------
-  useEffect(() => {
+  // Filtered products with useMemo for performance
+  const filteredProducts = useMemo(() => {
     let list = products;
     if (activeCat !== "All") {
       list = list.filter(
         (p) =>
-          p.category === activeCat || 
+          p.category === activeCat ||
           (defaultSubcategories[activeCat] || []).includes(p.subcategory)
       );
     }
@@ -65,45 +54,54 @@ export default function Home() {
         p.name.toLowerCase().includes(search.toLowerCase())
       );
     }
-    setFiltered(list);
-  }, [search, activeCat, products]);
+    return list;
+  }, [products, activeCat, search]);
+
+  // Generate category modules
+  const catModules = useMemo(() => {
+    return Object.keys(defaultCategoryImages).map((name) => ({
+      name,
+      image: defaultCategoryImages[name],
+      subcategories: defaultSubcategories[name],
+    }));
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto p-4">
 
-      {/* ------------------ Search ------------------ */}
+      {/* Search Bar */}
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Search for products..."
+          placeholder="Search products..."
           className="w-full p-3 border rounded shadow-sm"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
         />
       </div>
 
-      {/* ------------------ Categories ------------------ */}
+      {/* Categories */}
       <h2 className="text-xl font-bold mb-3">Categories</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
         {catModules.map((cat) => (
           <div
-            key={cat._id}
+            key={cat.name}
             className="p-3 rounded-xl border flex flex-col items-center hover:shadow transition"
           >
             <img
               src={cat.image}
-              className="w-16 h-16 object-cover rounded-full"
               alt={cat.name}
+              className="w-16 h-16 object-cover rounded-full"
             />
             <span className="text-sm mt-1 font-semibold">{cat.name}</span>
 
-            {cat.subcategories && cat.subcategories.length > 0 && (
+            {cat.subcategories && (
               <div className="mt-1 text-xs text-gray-500 flex flex-wrap justify-center gap-1">
                 {cat.subcategories.map((sub) => (
                   <button
                     key={sub}
                     onClick={() => setActiveCat(sub)}
-                    className={`px-1 py-0.5 rounded bg-gray-200 hover:bg-blue-100 text-gray-700`}
+                    className="px-1 py-0.5 rounded bg-gray-200 hover:bg-blue-100 text-gray-700"
                   >
                     {sub}
                   </button>
@@ -114,13 +112,13 @@ export default function Home() {
         ))}
       </div>
 
-      {/* ------------------ Product Grid ------------------ */}
+      {/* Products Grid */}
       <h2 className="text-xl font-bold mb-3">Products</h2>
-      {filtered.length === 0 ? (
+      {filteredProducts.length === 0 ? (
         <div className="text-gray-500">No products found</div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map((product) => {
+          {filteredProducts.map((product) => {
             const img =
               (product.images && product.images[0]) ||
               product.image ||
