@@ -1,101 +1,82 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getProducts } from "../api/api.js";
+import { getProducts, getCategories } from "../api/api.js";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
-  const [searchText, setSearchText] = useState("");
+  const [filtered, setFiltered] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState("All");
 
-  const defaultCategoryImages = {
-    Restaurants: "https://via.placeholder.com/100?text=Restaurants",
-    Grocery: "https://via.placeholder.com/100?text=Grocery",
-    Fashion: "https://via.placeholder.com/100?text=Fashion",
-    Beauty: "https://via.placeholder.com/100?text=Beauty",
-    Electronics: "https://via.placeholder.com/100?text=Electronics",
-    Home: "https://via.placeholder.com/100?text=Home",
-  };
-
-  const defaultSubcategories = {
-    Restaurants: ["Biryani", "Snacks", "Cold Drinks"],
-    Grocery: ["Vegetables", "Fruits", "Dairy"],
-    Fashion: ["Men", "Women", "Kids"],
-    Beauty: ["Makeup", "Skincare"],
-    Electronics: ["TV", "Audio"],
-    Home: ["Furniture", "Decor"],
-  };
-
-  // Fetch products
+  // ------------------ Fetch Categories ------------------
   useEffect(() => {
-    getProducts()
-      .then((res) => setProducts(res.data || []))
-      .catch(console.error);
+    getCategories()
+      .then((res) => {
+        const cats = res.data || [];
+        setCategories(cats);
+      })
+      .catch(() => {});
   }, []);
 
-  // Debounce search input
+  // ------------------ Fetch Products ------------------
   useEffect(() => {
-    const timer = setTimeout(() => setSearch(searchText), 300);
-    return () => clearTimeout(timer);
-  }, [searchText]);
+    getProducts()
+      .then((res) => {
+        const data = res.data || [];
+        setProducts(data);
+        setFiltered(data);
+      })
+      .catch(() => {});
+  }, []);
 
-  // Filtered products with useMemo for performance
-  const filteredProducts = useMemo(() => {
+  // ------------------ Filter Products ------------------
+  useEffect(() => {
     let list = products;
+
     if (activeCat !== "All") {
+      // Filter by category or subcategory dynamically from backend
       list = list.filter(
         (p) =>
           p.category === activeCat ||
-          (defaultSubcategories[activeCat] || []).includes(p.subcategory)
+          (categories.find((c) => c.name === activeCat)?.subcategories || []).includes(p.subcategory)
       );
     }
+
     if (search.trim() !== "") {
       list = list.filter((p) =>
         p.name.toLowerCase().includes(search.toLowerCase())
       );
     }
-    return list;
-  }, [products, activeCat, search]);
 
-  // Generate category modules
-  const catModules = useMemo(() => {
-    return Object.keys(defaultCategoryImages).map((name) => ({
-      name,
-      image: defaultCategoryImages[name],
-      subcategories: defaultSubcategories[name],
-    }));
-  }, []);
+    setFiltered(list);
+  }, [search, activeCat, products, categories]);
 
   return (
     <div className="max-w-7xl mx-auto p-4">
 
-      {/* Search Bar */}
+      {/* ------------------ Search ------------------ */}
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Search products..."
+          placeholder="Search for products..."
           className="w-full p-3 border rounded shadow-sm"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      {/* Categories */}
+      {/* ------------------ Categories ------------------ */}
       <h2 className="text-xl font-bold mb-3">Categories</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
-        {catModules.map((cat) => (
+        {categories.map((cat) => (
           <div
-            key={cat.name}
+            key={cat._id}
             className="p-3 rounded-xl border flex flex-col items-center hover:shadow transition"
           >
-            <img
-              src={cat.image}
-              alt={cat.name}
-              className="w-16 h-16 object-cover rounded-full"
-            />
             <span className="text-sm mt-1 font-semibold">{cat.name}</span>
 
-            {cat.subcategories && (
+            {cat.subcategories && cat.subcategories.length > 0 && (
               <div className="mt-1 text-xs text-gray-500 flex flex-wrap justify-center gap-1">
                 {cat.subcategories.map((sub) => (
                   <button
@@ -108,17 +89,25 @@ export default function Home() {
                 ))}
               </div>
             )}
+
+            {/* Click category name to filter all products in that category */}
+            <button
+              onClick={() => setActiveCat(cat.name)}
+              className="mt-1 px-2 py-0.5 rounded bg-blue-600 text-white text-xs"
+            >
+              View All
+            </button>
           </div>
         ))}
       </div>
 
-      {/* Products Grid */}
+      {/* ------------------ Product Grid ------------------ */}
       <h2 className="text-xl font-bold mb-3">Products</h2>
-      {filteredProducts.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="text-gray-500">No products found</div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filteredProducts.map((product) => {
+          {filtered.map((product) => {
             const img =
               (product.images && product.images[0]) ||
               product.image ||
