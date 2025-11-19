@@ -7,7 +7,7 @@ import CartPage from "./pages/CartPage.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import Orders from "./pages/Orders.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
-import Categories from "./pages/Categories.jsx";
+import CategoryPage from "./pages/CategoryPage.jsx";
 import CategoryProducts from "./pages/CategoryProducts.jsx";
 
 export default function App() {
@@ -24,7 +24,7 @@ export default function App() {
           <Route path="/orders" element={<Orders />} />
 
           {/* NEW */}
-          <Route path="/categories" element={<Categories />} />
+          <Route path="/category/:name" element={<CategoryPage />} />
           <Route path="/category/:name" element={<CategoryProducts />} />
         </Routes>
       </BrowserRouter>
